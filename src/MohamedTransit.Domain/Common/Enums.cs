@@ -38,6 +38,16 @@ public enum AccountStatus
     Rejected = 3,
     Locked = 4
 }
-
+public enum DocumentType
+{
+    CommercialInvoice = 1,
+    BillOfLading = 2,
+    PackingList = 3,
+    CustomsDeclaration = 4,
+    CertificateOfOrigin = 5,
+    TransitPermit = 6,
+    ReleaseLetter = 7,
+    Other = 8
+}
 
 

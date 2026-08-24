@@ -32,7 +32,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
 
     public DbSet<RolePrivilege> RolePrivileges => Set<RolePrivilege>();
-
+    public DbSet<ServiceDocument> ServiceDocuments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
