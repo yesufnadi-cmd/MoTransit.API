@@ -35,7 +35,7 @@ internal class DeleteDocumentQueryHandler
         }
 
         // Soft delete by updating recordStatus
-        document.recordStatus = RecordStatus.Delete; // ወይም Delete እንደ enum አጻጻፍሽ
+        document.RecordStatus = RecordStatus.Delete; // ወይም Delete እንደ enum አጻጻፍሽ
         _context.ServiceDocuments.Update(document);
         await _context.SaveChangesAsync(cancellationToken);
 

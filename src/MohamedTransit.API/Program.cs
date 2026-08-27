@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+
 using Microsoft.EntityFrameworkCore;
 
 using MohamedTransit.Api.Middleware;
@@ -30,13 +33,50 @@ builder.Services.AddSession(options =>
 // 3. Application Services Registration
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<TokenHandlerService>();
-builder.Services.AddScoped<PasswordService>(); // 👈 የጠፋው PasswordService እዚህ ተጨምሯል
-
+builder.Services.AddScoped<PasswordService>();
 // 3.a Bind and validate JWT settings early (fail fast on misconfiguration)
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
-builder.Services.Configure<JwtSettings>(jwtSection);
-builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<JwtSettings>, MohamedTransit.API.Validation.JwtSettingsValidator>();
 
+builder.Services.Configure<JwtSettings>(jwtSection);
+
+builder.Services.AddSingleton<
+    Microsoft.Extensions.Options.IValidateOptions<JwtSettings>,
+    MohamedTransit.API.Validation.JwtSettingsValidator>();
+
+// 3.b JWT Authentication
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSettings = builder.Configuration
+            .GetSection("JwtSettings")
+            .Get<JwtSettings>();
+
+        if (jwtSettings == null)
+        {
+            throw new InvalidOperationException(
+                "JwtSettings configuration is missing.");
+        }
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.SigningKey)
+            ),
+
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+
+            ValidateAudience = true,
+            ValidAudience = "MohamedTransitApp",
+
+            ValidateLifetime = true,
+
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 // 4. OpenAPI / Scalar
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -60,9 +100,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClientApplications", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -84,8 +125,8 @@ using (var scope = app.Services.CreateScope())
 app.UseExceptionHandler();
 
 // 11. Scalar API Documentation
-if (app.Environment.IsDevelopment())
-{
+app.Environment.IsDevelopment();
+
     app.MapOpenApi();
 
     app.MapScalarApiReference(options =>
@@ -93,7 +134,7 @@ if (app.Environment.IsDevelopment())
         options.WithTitle("Mohamed Transit API")
                .WithTheme(ScalarTheme.Purple);
     });
-}
+
 
 // 12. Middleware Pipeline
 app.UseHttpsRedirection();
@@ -101,7 +142,7 @@ app.UseStaticFiles();
 app.UseCors("AllowClientApplications");
 app.UseSession();
 app.UseAuthorization();
-
+app.UseAuthentication();
 app.MapControllers();
 
 app.Run();

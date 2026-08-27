@@ -17,14 +17,18 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
             .IsRequired()
             .HasMaxLength(50);
 
-        // Importer
+        // Importer Relationship (ይህ ክፍል ተስተካክሏል)
         builder.Property(s => s.ImporterId)
             .IsRequired();
 
-        builder.HasOne<User>()
+        builder.HasOne(s => s.Importer)
             .WithMany()
             .HasForeignKey(s => s.ImporterId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Declared Value Precision (ይህም ተጨምሯል)
+        builder.Property(s => s.DeclaredValue)
+            .HasColumnType("decimal(18,2)");
 
         // Description
         builder.Property(s => s.Description)

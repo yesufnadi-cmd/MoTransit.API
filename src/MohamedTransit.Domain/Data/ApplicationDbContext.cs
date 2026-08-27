@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Entities;
 
 namespace MohamedTransit.Domain.Data;
@@ -11,14 +12,18 @@ public class ApplicationDbContext : DbContext
         : base(options)
     {
     }
-
+    public DbSet<StageDocument> StageDocuments => Set<StageDocument>();
     // ==========================================
-    // Shipment
+    // Shipment & Stage Modules
     // ==========================================
 
     public DbSet<Shipment> Shipments => Set<Shipment>();
 
+    public DbSet<ServiceStageExecution> ServiceStageExecutions => Set<ServiceStageExecution>();
 
+    public DbSet<ServiceStageExecution> Stages => Set<ServiceStageExecution>();
+
+    public DbSet<StageTransport> Transports { get; set; }
     // ==========================================
     // User Account Module
     // ==========================================
@@ -43,7 +48,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(ApplicationDbContext).Assembly);
 
-
+        modelBuilder.Entity<Shipment>()
+    .HasOne(s => s.Importer)
+    .WithMany() // ወይም .WithMany(u => u.Shipments)
+    .HasForeignKey(s => s.ImporterId)
+    .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Shipment>()
+    .Property(s => s.DeclaredValue)
+    .HasColumnType("decimal(18,2)");
         // ==========================================
         // UserRole
         // ==========================================
@@ -92,7 +104,7 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasOne<User>()
                 .WithMany()
-                .HasForeignKey(s => s.ImporterId)
+                .HasForeignKey(s => s.Id)
                 .OnDelete(DeleteBehavior.NoAction);
 
            

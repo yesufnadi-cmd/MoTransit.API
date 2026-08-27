@@ -102,8 +102,7 @@ namespace MohamedTransit.Domain.Migrations
                 name: "Shipments",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<long>(type: "bigint", nullable: false),
                     TrackingNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ImporterId = table.Column<long>(type: "bigint", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
@@ -114,16 +113,22 @@ namespace MohamedTransit.Domain.Migrations
                     Destination = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    recordStatus = table.Column<int>(type: "int", nullable: false)
+                    RecordStatus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Shipments", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Shipments_Users_Id",
+                        column: x => x.Id,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Shipments_Users_ImporterId",
                         column: x => x.ImporterId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -152,6 +157,51 @@ namespace MohamedTransit.Domain.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ServiceDocuments",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OriginalFileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileExtension = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FileSizeBytes = table.Column<long>(type: "bigint", nullable: false),
+                    MimeType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DocumentType = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    IsVerified = table.Column<bool>(type: "bit", nullable: false),
+                    VerificationNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ShipmentId = table.Column<long>(type: "bigint", nullable: true),
+                    ShipmentStageId = table.Column<long>(type: "bigint", nullable: true),
+                    UploadedByUserId = table.Column<long>(type: "bigint", nullable: true),
+                    VerifiedByUserId = table.Column<long>(type: "bigint", nullable: true),
+                    CreateAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RecordStatus = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiceDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServiceDocuments_Shipments_ShipmentId",
+                        column: x => x.ShipmentId,
+                        principalTable: "Shipments",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ServiceDocuments_Users_UploadedByUserId",
+                        column: x => x.UploadedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ServiceDocuments_Users_VerifiedByUserId",
+                        column: x => x.VerifiedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_RolePrivileges_PrivilegeId",
                 table: "RolePrivileges",
@@ -161,6 +211,21 @@ namespace MohamedTransit.Domain.Migrations
                 name: "IX_RolePrivileges_RoleId",
                 table: "RolePrivileges",
                 column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceDocuments_ShipmentId",
+                table: "ServiceDocuments",
+                column: "ShipmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceDocuments_UploadedByUserId",
+                table: "ServiceDocuments",
+                column: "UploadedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceDocuments_VerifiedByUserId",
+                table: "ServiceDocuments",
+                column: "VerifiedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Shipments_ImporterId",
@@ -185,13 +250,16 @@ namespace MohamedTransit.Domain.Migrations
                 name: "RolePrivileges");
 
             migrationBuilder.DropTable(
-                name: "Shipments");
+                name: "ServiceDocuments");
 
             migrationBuilder.DropTable(
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
                 name: "Privileges");
+
+            migrationBuilder.DropTable(
+                name: "Shipments");
 
             migrationBuilder.DropTable(
                 name: "Roles");

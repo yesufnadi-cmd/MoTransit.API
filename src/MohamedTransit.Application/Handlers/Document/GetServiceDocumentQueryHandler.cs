@@ -25,16 +25,16 @@ internal class GetServiceDocumentsQueryHandler : IRequestHandler<GetServiceDocum
         try
         {
             var servicesQuery = _context.ServiceDocuments
-                                      .Where(s => s.ServiceId == request.ServiceId)
+                                      .Where(s => s.ShipmentId == request.ServiceId)
                                       .OrderByDescending(s => s.CreateAt) // StartDate በ CreatedDate ተተክቷል
                                       .AsQueryable();
 
             if (request.RecordStatus == RecordStatus.Active)
-                servicesQuery = servicesQuery.Where(u => u.recordStatus == Domain.Common.RecordStatus.Active);
+                servicesQuery = servicesQuery.Where(u => u.RecordStatus == Domain.Common.RecordStatus.Active);
             else if (request.RecordStatus == RecordStatus.InActive)
-                servicesQuery = servicesQuery.Where(u => u.recordStatus == Domain.Common.RecordStatus.InActive);
+                servicesQuery = servicesQuery.Where(u => u.RecordStatus == Domain.Common.RecordStatus.InActive);
             else if (request.RecordStatus == RecordStatus.Delete)
-                servicesQuery = servicesQuery.Where(u => u.recordStatus == Domain.Common.RecordStatus.Delete);
+                servicesQuery = servicesQuery.Where(u => u.RecordStatus == Domain.Common.RecordStatus.Delete);
 
             var services = await servicesQuery.ToListAsync(cancellationToken);
 

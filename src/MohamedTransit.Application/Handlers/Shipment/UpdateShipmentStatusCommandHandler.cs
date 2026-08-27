@@ -34,7 +34,7 @@ public sealed class UpdateShipmentStatusCommandHandler
         }
 
         // --- CRUD Validation & Status Update ---
-        if (shipment.Status == ShipmentStatus.Delivered || shipment.Status == ShipmentStatus.Cancelled)
+        if (shipment.Status == ShipmentStatus.Deliverd || shipment.Status == ShipmentStatus.Cancelled)
         {
             throw new InvalidOperationException("Delivered or Cancelled shipment cannot be updated.");
         }

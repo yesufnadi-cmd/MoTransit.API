@@ -142,10 +142,13 @@ namespace MohamedTransit.Domain.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("ServiceId")
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ShipmentId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("ServiceStageId")
+                    b.Property<long?>("ShipmentStageId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -160,12 +163,9 @@ namespace MohamedTransit.Domain.Migrations
                     b.Property<long?>("VerifiedByUserId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("recordStatus")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ServiceId");
+                    b.HasIndex("ShipmentId");
 
                     b.HasIndex("UploadedByUserId");
 
@@ -174,7 +174,7 @@ namespace MohamedTransit.Domain.Migrations
                     b.ToTable("ServiceDocuments");
                 });
 
-            modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceStageExecution", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -182,12 +182,99 @@ namespace MohamedTransit.Domain.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<string>("AssignedTo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BlockReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("InspectionType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequiresCustomerAction")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RiskNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("ShipmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SpotComment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StageSpot")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UpdatedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("ServiceStageExecution");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("AssignedAssessorId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("AssignedCaseExecutorId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("AssignedHub")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AssignmentNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CountryOfOrigin")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreateAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal>("DeclaredValue")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -211,7 +298,21 @@ namespace MohamedTransit.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RiskLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RouteCategory")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TaxCategory")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -223,14 +324,176 @@ namespace MohamedTransit.Domain.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("recordStatus")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedAssessorId");
+
+                    b.HasIndex("AssignedCaseExecutorId");
 
                     b.HasIndex("ImporterId");
 
                     b.ToTable("Shipments");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.StageComment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("CommentedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ServiceStageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentedByUserId");
+
+                    b.HasIndex("ServiceStageId");
+
+                    b.ToTable("StageComment");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.StageDocument", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ServiceStageExecutionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ServiceStageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UploadedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("VerificationNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("VerifiedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceStageExecutionId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.HasIndex("VerifiedByUserId");
+
+                    b.ToTable("StageDocuments");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.StageTransport", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LicenceDocument")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlateNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductAmount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ServiceStageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("ShipmentStage")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Transports");
                 });
 
             modelBuilder.Entity("MohamedTransit.Domain.Entities.User", b =>
@@ -353,9 +616,9 @@ namespace MohamedTransit.Domain.Migrations
 
             modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceDocument", b =>
                 {
-                    b.HasOne("MohamedTransit.Domain.Entities.Shipment", "Service")
+                    b.HasOne("MohamedTransit.Domain.Entities.Shipment", "Shipment")
                         .WithMany()
-                        .HasForeignKey("ServiceId");
+                        .HasForeignKey("ShipmentId");
 
                     b.HasOne("MohamedTransit.Domain.Entities.User", "UploadedByUser")
                         .WithMany()
@@ -365,20 +628,89 @@ namespace MohamedTransit.Domain.Migrations
                         .WithMany()
                         .HasForeignKey("VerifiedByUserId");
 
-                    b.Navigation("Service");
+                    b.Navigation("Shipment");
 
                     b.Navigation("UploadedByUser");
 
                     b.Navigation("VerifiedByUser");
                 });
 
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceStageExecution", b =>
+                {
+                    b.HasOne("MohamedTransit.Domain.Entities.Shipment", "Shipment")
+                        .WithMany("Stages")
+                        .HasForeignKey("ShipmentId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId");
+
+                    b.Navigation("Shipment");
+
+                    b.Navigation("UpdatedByUser");
+                });
+
             modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
                 {
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "AssignedAssessor")
+                        .WithMany()
+                        .HasForeignKey("AssignedAssessorId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "AssignedCaseExecutor")
+                        .WithMany()
+                        .HasForeignKey("AssignedCaseExecutorId");
+
                     b.HasOne("MohamedTransit.Domain.Entities.User", null)
                         .WithMany()
-                        .HasForeignKey("ImporterId")
+                        .HasForeignKey("Id")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "Importer")
+                        .WithMany()
+                        .HasForeignKey("ImporterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedAssessor");
+
+                    b.Navigation("AssignedCaseExecutor");
+
+                    b.Navigation("Importer");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.StageComment", b =>
+                {
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "CommentedByUser")
+                        .WithMany()
+                        .HasForeignKey("CommentedByUserId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.ServiceStageExecution", "ServiceStage")
+                        .WithMany("StageComments")
+                        .HasForeignKey("ServiceStageId");
+
+                    b.Navigation("CommentedByUser");
+
+                    b.Navigation("ServiceStage");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.StageDocument", b =>
+                {
+                    b.HasOne("MohamedTransit.Domain.Entities.ServiceStageExecution", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("ServiceStageExecutionId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "VerifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByUserId");
+
+                    b.Navigation("UploadedByUser");
+
+                    b.Navigation("VerifiedByUser");
                 });
 
             modelBuilder.Entity("MohamedTransit.Domain.Entities.UserRole", b =>
@@ -405,6 +737,18 @@ namespace MohamedTransit.Domain.Migrations
                     b.Navigation("RolePrivileges");
 
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceStageExecution", b =>
+                {
+                    b.Navigation("Documents");
+
+                    b.Navigation("StageComments");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
+                {
+                    b.Navigation("Stages");
                 });
 
             modelBuilder.Entity("MohamedTransit.Domain.Entities.User", b =>

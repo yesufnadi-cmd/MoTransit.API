@@ -17,13 +17,13 @@ public class ServiceDocument : BaseEntity
     public string? VerificationNotes { get; private set; }
 
     // Foreign Keys
-    public long? ServiceId { get; private set; }
-    public long? ServiceStageId { get; private set; }
+    public long? ShipmentId { get; private set; }
+    public long? ShipmentStageId { get; private set; }
     public long? UploadedByUserId { get; private set; }
     public long? VerifiedByUserId { get; private set; }
 
     // Navigation Properties
-    public Shipment? Service { get; set; }
+    public Shipment? Shipment { get; set; }
    // public ServiceStageExecution? ServiceStage { get; set; } // ስህተቱ እዚህ ጋር ተስተካክሏል
     public User? UploadedByUser { get; set; }
     public User? VerifiedByUser { get; set; }
@@ -53,13 +53,13 @@ public class ServiceDocument : BaseEntity
             FileSizeBytes = fileSizeBytes,
             MimeType = mimeType,
             DocumentType = documentType,
-            ServiceId = serviceId,
-            ServiceStageId = serviceStageId,
+            ShipmentId = serviceId,
+            ShipmentStageId = serviceStageId,
             UploadedByUserId = uploadedByUserId,
             Description = description,
             IsRequired = isRequired,
             IsVerified = false,
-            recordStatus = RecordStatus.Active
+            RecordStatus = RecordStatus.Active
         };
     }
 

@@ -78,7 +78,7 @@ public class DocumentService
     {
         return await _context.Set<ServiceDocument>()
             .AsNoTracking()
-            .Where(d => d.ServiceId == serviceId)
+            .Where(d => d.ShipmentId == serviceId)
             .ToListAsync();
     }
 

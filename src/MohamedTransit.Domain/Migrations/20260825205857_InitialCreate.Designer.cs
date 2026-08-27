@@ -12,7 +12,7 @@ using MohamedTransit.Domain.Data;
 namespace MohamedTransit.Domain.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260821074326_InitialCreate")]
+    [Migration("20260825205857_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -99,13 +99,88 @@ namespace MohamedTransit.Domain.Migrations
                     b.ToTable("RolePrivileges");
                 });
 
-            modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceDocument", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ShipmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ShipmentStageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("UploadedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("VerificationNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("VerifiedByUserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.HasIndex("UploadedByUserId");
+
+                    b.HasIndex("VerifiedByUserId");
+
+                    b.ToTable("ServiceDocuments");
+                });
+
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("AssignedHub")
                         .IsRequired()
@@ -136,6 +211,9 @@ namespace MohamedTransit.Domain.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("RecordStatus")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -147,9 +225,6 @@ namespace MohamedTransit.Domain.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("recordStatus")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -276,12 +351,39 @@ namespace MohamedTransit.Domain.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("MohamedTransit.Domain.Entities.ServiceDocument", b =>
+                {
+                    b.HasOne("MohamedTransit.Domain.Entities.Shipment", "Shipment")
+                        .WithMany()
+                        .HasForeignKey("ShipmentId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "UploadedByUser")
+                        .WithMany()
+                        .HasForeignKey("UploadedByUserId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", "VerifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByUserId");
+
+                    b.Navigation("Shipment");
+
+                    b.Navigation("UploadedByUser");
+
+                    b.Navigation("VerifiedByUser");
+                });
+
             modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
                 {
                     b.HasOne("MohamedTransit.Domain.Entities.User", null)
                         .WithMany()
-                        .HasForeignKey("ImporterId")
+                        .HasForeignKey("Id")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ImporterId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
