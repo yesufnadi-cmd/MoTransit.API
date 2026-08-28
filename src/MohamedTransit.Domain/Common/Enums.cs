@@ -8,6 +8,8 @@ public enum HubLocation
     Mojo = 2,
     Adama = 3
 }
+
+
 //public enum ShipmentStatus
 //{
 //    Registered = 1,
@@ -115,7 +117,21 @@ public enum ServiceType
     Multimodal = 1,
     Unimodal = 2
 }
-
+public enum RoleName
+{
+    SuperAdmin = 1,
+    StoreAdmin = 2,
+    Agent = 3,
+    CRO = 4,
+    Operator = 5,
+    Customer = 6,
+    // MOT System Roles
+    Manager = 7,
+    CaseExecutor = 8,
+    Assessor = 9,
+    DataEncoder = 10,
+    Importer = 11
+}
 public enum ShipmentStage
 {
     PrepaymentInvoice = 1,

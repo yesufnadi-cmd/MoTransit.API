@@ -1,7 +1,5 @@
 ﻿using MohamedTransit.Domain.Common;
-
 namespace MohamedTransit.Domain.Entities;
-
 public class Shipment : BaseEntity
 {
     // Public Properties ከ Private Set ጋር (Encapsulation)
@@ -34,6 +32,12 @@ public class Shipment : BaseEntity
 
     // Navigation Property ለ ServiceStageExecution
     public ICollection<ServiceStageExecution> Stages { get; private set; } = new List<ServiceStageExecution>();
+
+    // ==========================================
+    // አዲስ የተጨመሩት Navigation Properties
+    // ==========================================
+    public ICollection<ServiceDocument> Documents { get; private set; } = new List<ServiceDocument>();
+    public ICollection<ServiceMessage> Messages { get; private set; } = new List<ServiceMessage>();
 
     // Value Object Properties (Route)
     public string Origin { get; private set; } = string.Empty;
@@ -105,6 +109,19 @@ public class Shipment : BaseEntity
     public void AssignAssessor(long assessorId)
     {
         AssignedAssessorId = assessorId;
+        SetUpdated();
+    }
+
+    // ሰነዶችን እና መልዕክቶችን ለመጨመር የሚረዱ Domain Methods
+    public void AddDocument(ServiceDocument document)
+    {
+        Documents.Add(document);
+        SetUpdated();
+    }
+
+    public void AddMessage(ServiceMessage message)
+    {
+        Messages.Add(message);
         SetUpdated();
     }
 }
