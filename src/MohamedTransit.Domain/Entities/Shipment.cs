@@ -1,5 +1,7 @@
 ﻿using MohamedTransit.Domain.Common;
+
 namespace MohamedTransit.Domain.Entities;
+
 public class Shipment : BaseEntity
 {
     // Public Properties ከ Private Set ጋር (Encapsulation)
@@ -13,6 +15,10 @@ public class Shipment : BaseEntity
     public TransportMode Mode { get; private set; }
     public HubLocation AssignedHub { get; private set; }
     public ShipmentStatus Status { get; private set; } = ShipmentStatus.Submitted;
+
+    // Creator Information Properties
+    public long? CreatedByUserId { get; private set; }
+    public User? CreatedByUser { get; private set; }
 
     // Additional Properties ለ UpdateShipment Command
     public string RouteCategory { get; private set; } = string.Empty;
@@ -33,9 +39,7 @@ public class Shipment : BaseEntity
     // Navigation Property ለ ServiceStageExecution
     public ICollection<ServiceStageExecution> Stages { get; private set; } = new List<ServiceStageExecution>();
 
-    // ==========================================
-    // አዲስ የተጨመሩት Navigation Properties
-    // ==========================================
+    // Navigation Properties
     public ICollection<ServiceDocument> Documents { get; private set; } = new List<ServiceDocument>();
     public ICollection<ServiceMessage> Messages { get; private set; } = new List<ServiceMessage>();
 
@@ -54,7 +58,8 @@ public class Shipment : BaseEntity
         TransportMode mode,
         HubLocation assignedHub,
         string origin,
-        string destination)
+        string destination,
+        long? createdByUserId = null)
     {
         if (string.IsNullOrWhiteSpace(trackingNumber))
             throw new ArgumentException("Tracking number is required.", nameof(trackingNumber));
@@ -71,7 +76,8 @@ public class Shipment : BaseEntity
             AssignedHub = assignedHub,
             Origin = origin,
             Destination = destination,
-            Status = ShipmentStatus.Submitted
+            Status = ShipmentStatus.Submitted,
+            CreatedByUserId = createdByUserId
         };
     }
 
@@ -100,6 +106,12 @@ public class Shipment : BaseEntity
         SetUpdated();
     }
 
+    public void SetCreatedByUser(long userId)
+    {
+        CreatedByUserId = userId;
+        SetUpdated();
+    }
+
     public void AssignCaseExecutor(long caseExecutorId)
     {
         AssignedCaseExecutorId = caseExecutorId;
@@ -112,7 +124,6 @@ public class Shipment : BaseEntity
         SetUpdated();
     }
 
-    // ሰነዶችን እና መልዕክቶችን ለመጨመር የሚረዱ Domain Methods
     public void AddDocument(ServiceDocument document)
     {
         Documents.Add(document);

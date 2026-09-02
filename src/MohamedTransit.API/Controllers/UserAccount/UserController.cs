@@ -35,10 +35,6 @@ public class UserController : BaseController
         _tokenHandlerService = tokenHandlerService;
         _fileStorageService = fileStorageService;
     }
-
-    // =========================================================
-    // CREATE USER
-    // =========================================================
     [HttpPost("Create")]
     public async Task<IActionResult> Create([FromForm] CreateUserCommand clientRequest)
     {
@@ -51,9 +47,19 @@ public class UserController : BaseController
             });
         }
 
-        // FileStorageService ን በመጠቀም Profile Photo ማስቀመጥ
-        var photoPath = await _fileStorageService.SaveFileAsync(clientRequest.ProfileFile, "Profile_Photo");
-        clientRequest.ProfilePhoto = photoPath;
+        try
+        {
+            var photoPath = await _fileStorageService.SaveFileAsync(clientRequest.ProfileFile, "Profile_Photo");
+            clientRequest.ProfilePhoto = photoPath;
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                Error = true,
+                Message = ex.Message
+            });
+        }
 
         var result = await _mediator.Send(clientRequest);
 
@@ -63,10 +69,9 @@ public class UserController : BaseController
             return HandleErrorResponse(result.Errors ?? new());
         }
 
-        // በሶስተኛ ወገን Wrapper ፋንታ ቀጥታ 200 OK ማድረግ
-        return Ok(result);
+        return HandleSuccessResponse(result.Payload, "User created successfully");
     }
-    
+
 
     // =========================================================
     // DB TEST
@@ -164,6 +169,7 @@ public class UserController : BaseController
     // LOGIN
     // =========================================================
     [HttpPost("Login")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Login([FromBody] LoginUserCommand command)
     {
         var result = await _mediator.Send(command);
@@ -207,7 +213,7 @@ public class UserController : BaseController
 
         if (!result.IsError)
         {
-            return Ok(result);
+            return HandleSuccessResponse(result.Payload, "Users retrieved successfully");
         }
 
         return BadRequest(result);

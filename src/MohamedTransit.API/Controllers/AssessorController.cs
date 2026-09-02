@@ -1,272 +1,320 @@
-﻿//using Mapster;
+﻿using Mapster;
 
-//using MediatR;
+using MediatR;
 
-//using Microsoft.AspNetCore.Mvc;
-//using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-//using MohamedTransit.API.Controllers;
-//using MohamedTransit.API.Helpers;
-//using MohamedTransit.Domain.Common;
-//using MohamedTransit.Domain.Data;
-//using MohamedTransit.Domain.Entities;
-//namespace MohamedTransit.API.Controllers.MOT;
+using MohamedTransit.Application.Handlers.Assessor;
+using MohamedTransit.API.DTO.NewFolder.Request;
+using MohamedTransit.API.Helpers;
+using MohamedTransit.Domain.Common;
+using MohamedTransit.Domain.Data;
+using MohamedTransit.Domain.Entities;
 
-//[ApiController]
-//[Route("api/v1/[controller]")]
-//public class AssessorController : BaseController
-//{
-//    private readonly ApplicationDbContext _context;
-//    private readonly IHttpContextAccessor _httpContextAccessor;
-//    private readonly IMediator _mediator;
+namespace MohamedTransit.API.Controllers;
 
-//    public AssessorController(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor, IMediator mediator)
-//    {
-//        _context = context;
-//        _httpContextAccessor = httpContextAccessor;
-//        _mediator = mediator;
-//    }
+[ApiController]
+[Route("api/v1/[controller]")]
+public class AssessorController : BaseController
+{
+    private readonly ApplicationDbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IMediator _mediator;
 
-//    /// <summary>
-//    /// Get customers pending approval
-//    /// </summary>
-//    [HttpGet("GetPendingCustomerApprovals")]
-//    public async Task<IActionResult> GetPendingCustomerApprovals()
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+    public AssessorController(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor, IMediator mediator)
+    {
+        _context = context;
+        _httpContextAccessor = httpContextAccessor;
+        _mediator = mediator;
+    }
 
-//        var Importers = await _context.Importers
-//            .Include(c => c.User)
-//            .Include(c => c.CreatedByDataEncoder)
-//            .Include(c => c.Documents)
-//            .Where(c => !c.IsVerified && c.RecordStatus == RecordStatus.Active)
-//            .OrderByDescending(c => c.RegisteredDate)
-//            .ToListAsync();
+    /// <summary>
+    /// Get customers pending approval
+    /// </summary>
+    [HttpGet("GetPendingCustomerApprovals")]
+    public async Task<IActionResult> GetPendingCustomerApprovals()
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//        return HandleSuccessResponse(customers);
-//    }
+        var customers = await _context.Set<Customer>()
+            .Include(c => c.User)
+            .Include(c => c.CreatedByDataEncoder)
+            .Include(c => c.Documents)
+            .Where(c => !c.IsVerified && c.RecordStatus == RecordStatus.Active)
+            .OrderByDescending(c => c.CreateAt)
+            .ToListAsync();
 
-//    /// <summary>
-//    /// Approve or reject a customer
-//    /// </summary>
-//    [HttpPut("ApproveCustomer")]
-//    public async Task<IActionResult> ApproveCustomer([FromBody] CustomerApprovalRequest request)
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        return HandleSuccessResponse(customers);
+    }
 
+    /// <summary>
+    /// Approve or reject a customer
+    /// </summary>
+    [HttpPut("ApproveCustomer")]
+    public async Task<IActionResult> ApproveCustomer([FromBody] ApproveCustomerDto request)
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//        var command = new ApproveCustomerCommand
-//        {
-//            CustomerId = request.CustomerId,
-//            IsApproved = request.IsApproved,
-//            Notes = request.Notes,
-//            VerifiedByUserId = currentUserId.Value
-//        };
+        var customer = await _context.Set<Customer>()
+            .FirstOrDefaultAsync(c => c.Id == request.CustomerId);
 
-//        var result = await _mediator.Send(command);
+        if (customer == null)
+            return NotFound("Customer not found");
 
-//        return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
-//    }
+        // Domain method በመጠቀም Verification status ማስተካከል (Private setter ኤረርን ለማስወገድ)
+        if (request.IsApproved)
+        {
+            customer.Verify(currentUserId.Value);
+        }
+        else
+        {
+            customer.RejectVerification(request.Notes);
+        }
 
-//    /// <summary>
-//    /// Get service requests pending review
-//    /// </summary>
-//    [HttpGet("GetPendingServiceReviews")]
-//    public async Task<IActionResult> GetPendingServiceReviews()
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        await _context.SaveChangesAsync();
 
-//        var query = new GetPendingShipmentReviewsQuery { UserId = currentUserId.Value };
-//        var result = await _mediator.Send(query);
+        return HandleSuccessResponse(customer);
+    }
 
-//        return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
-//    }
+    /// <summary>
+    /// Get service requests pending review
+    /// </summary>
+    [HttpGet("GetPendingServiceReviews")]
+    public async Task<IActionResult> GetPendingServiceReviews()
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
+        var pending = await _context.Set<Shipment>()
+            .Include(s => s.Importer)
+            .Include(s => s.Stages)
+            .Where(s => s.Status == ShipmentStatus.Submitted && s.RecordStatus == RecordStatus.Active)
+            .OrderByDescending(s => s.CreateAt)
+            .ToListAsync();
 
-//    /// <summary>
-//    /// Review and approve/reject a service request
-//    /// </summary>
-//    [HttpPut("ReviewService")]
-//    public async Task<IActionResult> ReviewService([FromBody] ServiceReviewRequest request)
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        return HandleSuccessResponse(pending);
+    }
 
+    /// <summary>
+    /// Review and approve/reject a service request
+    /// </summary>
+    [HttpPut("ReviewService")]
+    public async Task<IActionResult> ReviewService([FromBody] ShipmentReviewRequest request)
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//        var service = await _context.Shipment
-//            .FirstOrDefaultAsync(s => s.Id == request.ServiceId);
+        var serviceId = GetIdFromRequest(request);
+        var service = await _context.Set<Shipment>()
+            .FirstOrDefaultAsync(s => s.Id == serviceId);
 
-//        if (service == null)
-//            return NotFound("Service not found");
+        if (service == null)
+            return NotFound("Service not found");
 
-//        if (request.IsApproved)
-//        {
-//            service.UpdateStatus(ShipmentStatus.Approved);
-//            service.AssignAssessor(currentUserId.Value);
-//        }
-//        else
-//        {
-//            service.UpdateStatus(ShipmentStatus.Rejected);
-//        }
+        if (request.IsApproved)
+        {
+            service.UpdateStatus(ShipmentStatus.Approved);
+            service.AssignAssessor(currentUserId.Value);
+        }
+        else
+        {
+            service.UpdateStatus(ShipmentStatus.Rejected);
+        }
 
-//        // Add review comment if provided
-//        if (!string.IsNullOrEmpty(request.ReviewNotes))
-//        {
-//            var reviewComment = ServiceMessage.Create(
-//                "Service Review",
-//                request.ReviewNotes,
-//                MessageType.System,
-//                request.ServiceId,
-//                currentUserId.Value,
-//                service.CreatedByDataEncoderId
-//            );
+        if (!string.IsNullOrEmpty(request.ReviewNotes))
+        {
+            // CreatedByDataEncoderId ምትክ CreatedByUserId በመጠቀም ስህተቱን ማስተካከል
+            var reviewComment = ServiceMessage.Create(
+                "Service Review",
+                request.ReviewNotes,
+                MessageType.System,
+                serviceId,
+                currentUserId.Value,
+                service.CreatedByUserId
+            );
 
-//            _context.ServiceMessages.Add(reviewComment);
-//        }
+            _context.Set<ServiceMessage>().Add(reviewComment);
+        }
 
-//        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 
-//        return HandleSuccessResponse(service);
-//    }
+        return HandleSuccessResponse(service);
+    }
 
-//    /// <summary>
-//    /// Get services under assessor oversight
-//    /// </summary>
-//    [HttpGet("GetServicesUnderOversight")]
-//    public async Task<IActionResult> GetServicesUnderOversight(
-//        [FromQuery] ShipmentStatus? status = null,
-//        [FromQuery] ServiceType? type = null)
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+    /// <summary>
+    /// Get services under assessor oversight
+    /// </summary>
+    [HttpGet("GetServicesUnderOversight")]
+    public async Task<IActionResult> GetServicesUnderOversight(
+        [FromQuery] ShipmentStatus? status = null,
+        [FromQuery] ServiceType? type = null)
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//        var query = _context.Services
-//            .Include(s => s.Customer)
-//            .Include(s => s.AssignedCaseExecutor)
-//            .Include(s => s.Stages)
-//            .Where(s => s.AssignedAssessorId == currentUserId.Value);
+        var query = _context.Set<Shipment>()
+            .Include(s => s.Importer)
+            .Include(s => s.AssignedCaseExecutor)
+            .Include(s => s.Stages)
+            .Where(s => s.AssignedAssessorId == currentUserId.Value);
 
-//        if (status.HasValue)
-//            query = query.Where(s => s.Status == status.Value);
+        if (status.HasValue)
+            query = query.Where(s => s.Status == status.Value);
 
-//        if (type.HasValue)
-//            query = query.Where(s => s.ServiceType == type.Value);
+        var services = await query
+            .OrderByDescending(s => s.CreateAt)
+            .ToListAsync();
 
-//        var services = await query
-//            .OrderByDescending(s => s.RegisteredDate)
-//            .ToListAsync();
+        return HandleSuccessResponse(services);
+    }
 
-//        return HandleSuccessResponse(services);
-//    }
+    /// <summary>
+    /// Add compliance feedback to a service
+    /// </summary>
+    [HttpPost("AddComplianceFeedback")]
+    public async Task<IActionResult> AddComplianceFeedback([FromBody] ComplianceFeedbackRequest request)
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//    /// <summary>
-//    /// Add compliance feedback to a service
-//    /// </summary>
-//    [HttpPost("AddComplianceFeedback")]
-//    public async Task<IActionResult> AddComplianceFeedback([FromBody] ComplianceFeedbackRequest request)
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        var serviceId = GetIdFromRequest(request);
+        var service = await _context.Set<Shipment>()
+            .FirstOrDefaultAsync(s => s.Id == serviceId);
 
-//        var service = await _context.Services
-//            .FirstOrDefaultAsync(s => s.Id == request.ServiceId);
+        if (service == null)
+            return NotFound("Service not found");
 
-//        if (service == null)
-//            return NotFound("Service not found");
+        var feedback = ServiceMessage.Create(
+            "Compliance Feedback",
+            request.Feedback,
+            MessageType.System,
+            serviceId,
+            currentUserId.Value,
+            service.AssignedCaseExecutorId,
+            null,
+            true
+        );
 
-//        var feedback = ServiceMessage.Create(
-//            "Compliance Feedback",
-//            request.Feedback,
-//            MessageType.System,
-//            request.ServiceId,
-//            currentUserId.Value,
-//            service.AssignedCaseExecutorId,
-//            null,
-//            true
-//        );
+        _context.Set<ServiceMessage>().Add(feedback);
+        await _context.SaveChangesAsync();
 
-//        _context.ServiceMessage.Add(feedback);
-//        await _context.SaveChangesAsync();
+        return HandleSuccessResponse(feedback);
+    }
 
-//        return HandleSuccessResponse(feedback);
-//    }
+    /// <summary>
+    /// Get assessor dashboard
+    /// </summary>
+    [HttpGet("GetDashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//    /// <summary>
-//    /// Get assessor dashboard
-//    /// </summary>
-//    [HttpGet("GetDashboard")]
-//    public async Task<IActionResult> GetDashboard()
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        var pendingCustomerApprovalsCount = await _context.Set<Customer>()
+            .CountAsync(c => !c.IsVerified && c.RecordStatus == RecordStatus.Active);
 
-//        var dashboard = new MohamedTransit.API.D.Response.AssessorDashboardResponse
-//        {
-//            PendingCustomerApprovals = await _context.Customers.CountAsync(c => !c.IsVerified && c.RecordStatus == RecordStatus.Active),
-//            PendingServiceReviews = await _context.Services.CountAsync(s => s.Status == ServiceStatus.Submitted),
-//            ServicesUnderOversight = await _context.Services.CountAsync(s => s.AssignedAssessorId == currentUserId.Value),
-//            CompletedReviewsToday = await _context.Shipments.CountAsync(s => s.AssignedAssessorId == currentUserId.Value &&
-//                                                                           s.LastUpdateDate.Date == DateTime.UtcNow.Date)
-//        };
+        var pendingServiceReviewsCount = await _context.Set<Shipment>()
+            .CountAsync(s => s.Status == ShipmentStatus.Submitted);
 
-//        // Get recent activities
-//        dashboard.RecentCustomerApprovals = await _context.Importers
-//            .Include(c => c.User)
-//            .Where(c => c.VerifiedByUserId == currentUserId.Value)
-//            .OrderByDescending(c => c.VerifiedAt)
-//            .Take(5)
-//            .ToListAsync();
+        var servicesUnderOversightCount = await _context.Set<Shipment>()
+            .CountAsync(s => s.AssignedAssessorId == currentUserId.Value);
 
-//        dashboard.RecentServiceReviews = await _context.Shipments
-//            .Include(s => s.Importer)
-//            .Where(s => s.AssignedAssessorId == currentUserId.Value)
-//            .OrderByDescending(s => s.LastUpdateDate)
-//            .Take(5)
-//            .ToListAsync();
+        var completedReviewsTodayCount = await _context.Set<Shipment>()
+            .CountAsync(s => s.AssignedAssessorId == currentUserId.Value &&
+                             s.UpdatedAt.HasValue && s.UpdatedAt.Value.Date == DateTime.UtcNow.Date);
 
-//        return HandleSuccessResponse(dashboard);
-//    }
+        var recentCustomerApprovals = await _context.Set<Customer>()
+            .Include(c => c.User)
+            .Where(c => c.VerifiedByUserId == currentUserId.Value)
+            .OrderByDescending(c => c.VerifiedAt)
+            .Take(5)
+            .ToListAsync();
 
-//    /// <summary>
-//    /// Get compliance issues flagged
-//    /// </summary>
-//    [HttpGet("GetComplianceIssues")]
-//    public async Task<IActionResult> GetComplianceIssues()
-//    {
-//        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
-//        if (currentUserId == null)
-//            return Unauthorized("User not authenticated");
+        var recentServiceReviews = await _context.Set<Shipment>()
+            .Include(s => s.Importer)
+            .Where(s => s.AssignedAssessorId == currentUserId.Value)
+            .OrderByDescending(s => s.UpdatedAt)
+            .Take(5)
+            .ToListAsync();
 
-//        var issues = await _context.ServiceMessage
-//            .Include(m => m.Service)
-//            .Include(m => m.SenderUser)
-//            .Where(m => m.MessageType == MessageType.System &&
-//                       m.Subject.Contains("Compliance") &&
-//                       m.IsUrgent)
-//            .OrderByDescending(m => m.RegisteredDate)
-//            .ToListAsync();
+        var dashboard = new
+        {
+            PendingCustomerApprovals = pendingCustomerApprovalsCount,
+            PendingServiceReviews = pendingServiceReviewsCount,
+            ServicesUnderOversight = servicesUnderOversightCount,
+            CompletedReviewsToday = completedReviewsTodayCount,
+            RecentCustomerApprovals = recentCustomerApprovals,
+            RecentServiceReviews = recentServiceReviews
+        };
 
-//        return HandleSuccessResponse(issues);
-//    }
+        return HandleSuccessResponse(dashboard);
+    }
 
+    /// <summary>
+    /// Get compliance issues flagged
+    /// </summary>
+    [HttpGet("GetComplianceIssues")]
+    public async Task<IActionResult> GetComplianceIssues()
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
-//    private async Task<bool> IsAssessor(long userId)
-//    {
-//        var user = await _context.Users
-//            .Include(u => u.UserRoles)
-//            .ThenInclude(ur => ur.Role)
-//            .FirstOrDefaultAsync(u => u.Id == userId);
+        var issues = await _context.Set<ServiceMessage>()
+            .Include(m => m.Service)
+            .Include(m => m.SenderUser)
+            .Where(m => m.MessageType == MessageType.System &&
+                        m.Subject.Contains("Compliance") &&
+                        m.IsUrgent)
+            .OrderByDescending(m => m.Id)
+            .ToListAsync();
 
-//        return user?.UserRoles.Any(ur => ur.Role.Name == "Assessor") ?? false;
-//    }
-//}
+        return HandleSuccessResponse(issues);
+    }
+
+    private async Task<bool> IsAssessor(long userId)
+    {
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        return user?.UserRoles.Any(ur => ur.Role.Name == "Assessor") ?? false;
+    }
+
+    private static long GetIdFromRequest(object request)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        var type = request.GetType();
+        var candidateNames = new[] { "ServiceId", "ShipmentId", "Id", "RequestId", "ServiceID", "ShipmentID" };
+
+        foreach (var name in candidateNames)
+        {
+            var prop = type.GetProperty(name);
+            if (prop == null) continue;
+            var val = prop.GetValue(request);
+            if (val == null) continue;
+            try
+            {
+                return Convert.ToInt64(val);
+            }
+            catch
+            {
+                // ignore and continue
+            }
+        }
+
+        throw new InvalidOperationException($"Request object of type {type.FullName} does not contain a recognized id property.");
+    }
+}

@@ -1,8 +1,6 @@
-﻿using MediatR;
-using MohamedTransit.Application.Helper;
-using MohamedTransit.Domain.Entities;
-namespace MohamedTransit.Application;
-public class CreateCustomerCommand : IRequest<OperationResult<User>>
+﻿namespace MohamedTransit.API.DTO.MasterData.Request;
+
+public class CreateCustomerRequest
 {
     public string BusinessName { get; set; } = string.Empty;
     public string TINNumber { get; set; } = string.Empty;
@@ -17,6 +15,5 @@ public class CreateCustomerCommand : IRequest<OperationResult<User>>
     public string BusinessType { get; set; } = string.Empty;
     public string ImportLicense { get; set; } = string.Empty;
     public DateTime? ImportLicenseExpiry { get; set; }
-    public long CreatedByDataEncoderId { get; set; }
     public long UserId { get; set; }
 }

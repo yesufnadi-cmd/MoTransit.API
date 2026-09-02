@@ -1,24 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-using MediatR;
-
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
-
-using MohamedTransit.Application.Helper;
 using MohamedTransit.Domain.Common;
-using MohamedTransit.Domain.Data;
+using MohamedTransit.Application.Helper;
 using MohamedTransit.Domain.Entities;
+using ShipmentEntity = MohamedTransit.Domain.Entities.Shipment;
+using MohamedTransit.Domain.Data;
+using MohamedTransit.Application.Queries.Assessor;
 
-using Transit.Application.Queries;
+namespace MohamedTransit.Application.Handlers.Assessor;
 
-
-namespace Transit.Application.Handlers;
-
-internal class GetPendingShipmentReviewsHandler : IRequestHandler<GetPendingShipmentReviewsQuery, OperationResult<List<Shipment>>>
+internal class GetPendingShipmentReviewsHandler : IRequestHandler<GetPendingShipmentReviewsQuery, OperationResult<List<ShipmentEntity>>>
 {
     private readonly ApplicationDbContext _context;
 
@@ -27,11 +18,17 @@ internal class GetPendingShipmentReviewsHandler : IRequestHandler<GetPendingShip
         _context = context;
     }
 
-    public async Task<OperationResult<List<Shipment>>> Handle(GetPendingShipmentReviewsQuery request, CancellationToken cancellationToken)
+    public async Task<OperationResult<List<ShipmentEntity>>> Handle(GetPendingShipmentReviewsQuery request, CancellationToken cancellationToken)
     {
-        var result = new OperationResult<List<Shipment>>();
+        var result = new OperationResult<List<ShipmentEntity>>();
 
-        // ለገባው Assessor የተመደቡ እና ገና ያልተገመገሙ (Pending/UnderReview) ጭነቶችን በሙሉ ማምጣት
+        if (!long.TryParse(request.UserId, out long parsedAssessorId))
+        {
+            result.Message = "Assessor Id is wrong";
+            result.Payload = new List<ShipmentEntity>();
+            return result;
+        }
+
         var pendingShipments = await _context.Shipments
             .Include(s => s.Importer)
             .Include(s => s.AssignedCaseExecutor)
@@ -42,14 +39,14 @@ internal class GetPendingShipmentReviewsHandler : IRequestHandler<GetPendingShip
                 .ThenInclude(stage => stage.Documents)
             .Include(s => s.Documents)
             .Include(s => s.Messages)
-            .Where(s => s.AssignedAssessorId == request.UserId &&
+            .Where(s => s.AssignedAssessorId == parsedAssessorId &&
                        (s.Status == ShipmentStatus.Draft || s.Status == ShipmentStatus.UnderReview))
             .ToListAsync(cancellationToken);
 
         if (pendingShipments == null || !pendingShipments.Any())
         {
-            result.Message = "No unreviewed shipment assigned to the importer was found.";
-            result.Payload = new List<Shipment>();
+            result.Message = "No unreviewed shipment assigned to the assessor was found.";
+            result.Payload = new List<ShipmentEntity>();
             return result;
         }
 

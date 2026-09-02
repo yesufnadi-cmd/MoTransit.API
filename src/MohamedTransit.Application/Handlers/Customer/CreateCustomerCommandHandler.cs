@@ -6,13 +6,13 @@ using MohamedTransit.Application.Service;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
 namespace MohamedTransit.Application.Handlers.Customer;
-internal class ApproveCustomerCommandHandler : IRequestHandler<ApproveCustomerCommand, OperationResult<MohamedTransit.Domain.Entities.Customer>>
+internal class CreateCustomerCommandHandler : IRequestHandler<CreateCustomerCommand, OperationResult<User>>
 {
     private readonly ApplicationDbContext _context;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly TokenHandlerService _tokenHandlerService;
 
-    public ApproveCustomerCommandHandler(
+    public CreateCustomerCommandHandler(
         ApplicationDbContext context,
         IHttpContextAccessor httpContextAccessor,
         TokenHandlerService tokenHandlerService)
@@ -22,9 +22,9 @@ internal class ApproveCustomerCommandHandler : IRequestHandler<ApproveCustomerCo
         _tokenHandlerService = tokenHandlerService;
     }
 
-    public async Task<OperationResult<MohamedTransit.Domain.Entities.Customer>> Handle(ApproveCustomerCommand request, CancellationToken cancellationToken)
+    public async Task<OperationResult<User>> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
     {
-        var result = new OperationResult<MohamedTransit.Domain.Entities.Customer>();
+        var result = new OperationResult<User>();
 
         var userName = GetCurrentUserName();
         long userId = 0;
@@ -38,62 +38,74 @@ internal class ApproveCustomerCommandHandler : IRequestHandler<ApproveCustomerCo
             }
         }
 
-        // 1. Customer መኖሩን ማረጋገጥ
-        var customer = await _context.Customers
-            .Include(c => c.User)
-            .FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
-
-        if (customer == null)
+      
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
+        if (user == null)
         {
-            result.AddError(ErrorCode.NotFound, "Customer not found.");
+            result.AddError(ErrorCode.NotFound, "User not found.");
             return result;
         }
 
-        // 2. አስቀድሞ የፀደቀ መሆኑን ማረጋገጥ
-        if (customer.IsVerified && request.IsApproved)
+      
+        var existingCustomer = await _context.Customers
+            .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken);
+        if (existingCustomer is not null)
         {
-            result.AddError(ErrorCode.RecordFound, "Customer is already verified.");
+            result.AddError(ErrorCode.RecordFound, "Customer profile already exists for this user.");
             return result;
         }
 
-        // 3. ማፅደቅ ወይም ውድቅ ማድረግ
-        if (request.IsApproved)
-        {
-            customer.Verify(request.VerifiedByUserId, request.Notes);
-        }
-        else
-        {
-            customer.SetUpdated();
-        }
+       
+        var customer = MohamedTransit.Domain.Entities.Customer.Create(
+            request.BusinessName,
+            request.TINNumber,
+            request.BusinessLicense,
+            request.BusinessAddress,
+            request.City,
+            request.State,
+            request.PostalCode,
+            request.ContactPerson,
+            request.ContactPhone,
+            request.ContactEmail,
+            request.BusinessType,
+            request.ImportLicense,
+            request.ImportLicenseExpiry,
+            request.UserId,
+            request.CreatedByDataEncoderId
+        );
 
+        _context.Customers.Add(customer);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 4. የተሻሻለውን Customer መረጃ ከነ-ግንኙነቶቹ መጫን
-        var updatedCustomer = await _context.Customers
-            .Include(c => c.User)
-            .Include(c => c.VerifiedByUser)
-            .FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
+        var updatedUser = await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
 
-        if (updatedCustomer == null)
+        if (updatedUser == null)
         {
-            result.AddError(ErrorCode.NotFound, "Customer not found after approval.");
+            result.AddError(ErrorCode.NotFound, "User not found after customer creation.");
             return result;
         }
 
-        result.Payload = updatedCustomer;
-        result.Message = request.IsApproved ? "Customer approved successfully." : "Customer rejection recorded.";
+        result.Payload = updatedUser;
+        result.Message = "Customer profile created successfully.";
 
         return result;
     }
 
+    
     private string? GetCurrentUserName()
     {
         var authorizationHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
+        {
             return null;
+        }
 
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         var claims = _tokenHandlerService.GetClaims(token);
+
         var userNameClaim = claims?.FirstOrDefault(c => c.Type == "userName");
         return userNameClaim?.Value;
     }

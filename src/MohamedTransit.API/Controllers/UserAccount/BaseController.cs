@@ -6,12 +6,9 @@ using MediatR;
 
 using Microsoft.AspNetCore.Mvc;
 
-//using MohamedTransit.Application.Common;
 using MohamedTransit.Application.DTO;
 using MohamedTransit.Application.Helper;
 using MohamedTransit.Domain.Common;
-
-//using Error = MohamedTransit.Application.Common.Error;
 
 namespace MohamedTransit.API.Controllers;
 
@@ -94,12 +91,15 @@ public class BaseController : ControllerBase
             return StatusCode((int)error.Code, apiResponse);
         }
 
+        var statusCode = error.Code != 0 ? (int)error.Code : (int)HttpStatusCode.BadRequest;
+
         apiResponse.Error = true;
         apiResponse.Errors.Add(error.Message);
-        apiResponse.StatusCode = (int)HttpStatusCode.OK;
+        apiResponse.StatusCode = statusCode;
         apiResponse.Response = null;
         apiResponse.Message = error.Message;
-        return StatusCode((int)HttpStatusCode.OK, apiResponse);
+
+        return StatusCode(statusCode, apiResponse);
     }
 
     protected IActionResult HandleTokenErrorResponse(List<Error> errors)

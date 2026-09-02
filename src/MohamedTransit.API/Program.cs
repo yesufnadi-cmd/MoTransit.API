@@ -1,148 +1,162 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Text.Json.Serialization;
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 using MohamedTransit.Api.Middleware;
 using MohamedTransit.API;
 using MohamedTransit.API.Services;
+using MohamedTransit.API.Validation;
 using MohamedTransit.Application;
-using MohamedTransit.Application.Service;
 using MohamedTransit.Application.Options;
-using System.Text;
+using MohamedTransit.Application.Service;
 using MohamedTransit.Application.Services;
 using MohamedTransit.Domain.Data;
 
 using Scalar.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
+    WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
+});
 
-// 1. Controllers & HttpContext Accessor
-builder.Services.AddControllers();
+// 1. Controllers & Global Filters
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
 builder.Services.AddHttpContextAccessor();
 
-// 2. Session Configuration
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
+// 2. Application & MediatR Architecture Setup
+builder.Services.AddApplication();
 
 // 3. Application Services Registration
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<TokenHandlerService>();
 builder.Services.AddScoped<PasswordService>();
-// 3.a Bind and validate JWT settings early (fail fast on misconfiguration)
-var jwtSection = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddScoped<EmailSenderService>();
+// 4. JWT Options Registration & Early Validation
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection("JwtSettings"))
+    .Validate(settings =>
+        !string.IsNullOrWhiteSpace(settings.SigningKey) && settings.SigningKey.Length >= 32,
+        "JwtSettings.SigningKey is missing or shorter than 32 characters.")
+    .ValidateOnStart();
 
-builder.Services.Configure<JwtSettings>(jwtSection);
-
-builder.Services.AddSingleton<
-    Microsoft.Extensions.Options.IValidateOptions<JwtSettings>,
-    MohamedTransit.API.Validation.JwtSettingsValidator>();
-
-// 3.b JWT Authentication
+// 4.a JWT Authentication Configuration
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         var jwtSettings = builder.Configuration
             .GetSection("JwtSettings")
-            .Get<JwtSettings>();
-
-        if (jwtSettings == null)
-        {
-            throw new InvalidOperationException(
-                "JwtSettings configuration is missing.");
-        }
+            .Get<JwtSettings>() ?? new JwtSettings();
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtSettings.SigningKey)
             ),
-
             ValidateIssuer = true,
             ValidIssuer = jwtSettings.Issuer,
-
             ValidateAudience = true,
             ValidAudience = "MohamedTransitApp",
-
             ValidateLifetime = true,
-
             ClockSkew = TimeSpan.Zero
         };
     });
-// 4. OpenAPI / Scalar
+// 5. OpenAPI / Scalar Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// 5. Application Layer
-builder.Services.AddApplication();
-builder.Services.AddScoped<EmailSenderService>();
-
-// 6. Database Configuration
+// 6. Environment-Aware Database Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+               .EnableSensitiveDataLogging()
+               .LogTo(Console.WriteLine, LogLevel.Information);
+    }
+    else
+    {
+        options.UseNpgsql(builder.Configuration.GetConnectionString("ProductionConnection"));
+    }
+});
 
-// 7. Exception Handling
+// 7. Global Exception Handling
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-// 8. CORS
+// 8. Enhanced Mobile & Web CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClientApplications", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:5000",
+                "http://localhost:5002",
+                "https://localhost:5002",
+                "http://localhost:8081",
+                "http://10.0.2.2:7236"
+            )
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition", "Content-Length", "Content-Type");
     });
 });
 
 var app = builder.Build();
 
-// 9. Database Migration & Admin Privilege Seeder Execution
+// 9. Auto-Database Migration & Admin Privilege Seeding
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-    // ዳታቤዝ ሚግሬሽን ማካሄድ
     db.Database.Migrate();
-
-    // Privileges እና SuperAdmin Role Seed ማድረግ
     AdminPrivilegeSeeder.Seed(scope.ServiceProvider);
 }
 
-// 10. Exception Middleware
+// 10. Profile Photo Static File Mapping Configuration
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+var profilePhotoPath = Path.Combine(webRootPath, "Profile_Photo");
+
+if (!Directory.Exists(profilePhotoPath))
+{
+    Directory.CreateDirectory(profilePhotoPath);
+}
+
+// 11. Middleware Execution Pipeline
 app.UseExceptionHandler();
 
-// 11. Scalar API Documentation
-app.Environment.IsDevelopment();
-
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
-
     app.MapScalarApiReference(options =>
     {
         options.WithTitle("Mohamed Transit API")
                .WithTheme(ScalarTheme.Purple);
     });
+}
 
-
-// 12. Middleware Pipeline
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseCors("AllowClientApplications");
-app.UseSession();
-app.UseAuthorization();
+
 app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

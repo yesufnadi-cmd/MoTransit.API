@@ -38,7 +38,11 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<RolePrivilege> RolePrivileges => Set<RolePrivilege>();
     public DbSet<ServiceDocument> ServiceDocuments { get; set; }
-
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<CustomerDocument> CustomerDocuments { get; set; }
+    public DbSet<ServiceMessage> ServiceMessages { get; set; }
+    
+   
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
