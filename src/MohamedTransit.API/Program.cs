@@ -13,6 +13,7 @@ using MohamedTransit.API.Services;
 using MohamedTransit.API.Validation;
 using MohamedTransit.Application;
 using MohamedTransit.Application.Options;
+using MohamedTransit.Application.Helper;
 using MohamedTransit.Application.Service;
 using MohamedTransit.Application.Services;
 using MohamedTransit.Domain.Data;
@@ -25,6 +26,17 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory,
     WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
 });
+
+// 4.b Email settings validation - fail fast if sender is not configured
+// Bind the Settings object to the top-level "Settings" configuration section
+// because appsettings.json nests EmailSettings inside "Settings".
+builder.Services.AddOptions<Settings>()
+    .Bind(builder.Configuration.GetSection("Settings"))
+    .Validate(s => s != null
+                   && s.EmailSettings != null
+                   && !string.IsNullOrWhiteSpace(s.EmailSettings.Sender),
+              "EmailSettings.EmailSettings.Sender must be configured")
+    .ValidateOnStart();
 
 // 1. Controllers & Global Filters
 builder.Services.AddControllers()

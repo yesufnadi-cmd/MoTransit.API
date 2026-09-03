@@ -1,10 +1,9 @@
 ﻿
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
-
 using MohamedTransit.Application.Commands.UserAccount;
-using MohamedTransit.Application.DTO;
 using MohamedTransit.Application.Handlers.UserAccount;
+using MohamedTransit.API.DTO.User.Request;
 
 namespace MohamedTransit.API.Controllers.UserAccount;
 
@@ -27,13 +26,17 @@ public class PasswordController : BaseController
         var result = await _mediator.Send(command);
         return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
     }
-
     [HttpPost("ForgotPassword")]
-    public async Task<IActionResult> ForgotPassword([FromBody] PasswordRequest request)
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request)
     {
         var command = request.Adapt<ForgotPasswordCommand>();
+
         var result = await _mediator.Send(command);
-        return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
+
+        return result.IsError
+            ? HandleErrorResponse(result.Errors)
+            : HandleSuccessResponse(result.Payload);
     }
 
 }

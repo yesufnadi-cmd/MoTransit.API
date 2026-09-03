@@ -13,7 +13,13 @@ public class EmailSenderService
 
     public EmailSenderService(IOptions<Settings> emailSettings)
     {
-        _emailSettings = emailSettings.Value;
+        _emailSettings = emailSettings.Value ?? throw new ArgumentNullException(nameof(emailSettings));
+
+        if (string.IsNullOrWhiteSpace(_emailSettings?.EmailSettings?.Sender))
+        {
+            throw new InvalidOperationException(
+                "Email sender is not configured. Set EmailSettings:EmailSettings:Sender in configuration.");
+        }
     }
 
     public async Task SendEmailAsync(
@@ -44,21 +50,20 @@ public class EmailSenderService
             return;
         }
 
+        var senderName = string.IsNullOrWhiteSpace(_emailSettings.EmailSettings.SenderName)
+            ? "Mohamed Transit Group"
+            : _emailSettings.EmailSettings.SenderName;
+
+        var senderAddress = _emailSettings.EmailSettings.Sender.Trim();
+
         using var mail = new MailMessage
         {
-            From = new MailAddress(
-                _emailSettings.EmailSettings.Sender,
-                string.IsNullOrWhiteSpace(
-                    _emailSettings.EmailSettings.SenderName)
-                    ? "Mohamed Transit Group"
-                    : _emailSettings.EmailSettings.SenderName),
-
+            From = new MailAddress(senderAddress, senderName),
             Subject = subject,
             Body = message,
             IsBodyHtml = true,
             Priority = MailPriority.High
         };
-
         if (toAddress != null)
         {
             foreach (var to in toAddress)
@@ -92,20 +97,14 @@ public class EmailSenderService
             }
         }
 
-        using var smtp = new SmtpClient(
-            _emailSettings.EmailSettings.MailServer,
-            _emailSettings.EmailSettings.MailPort)
+        using var smtp = new SmtpClient(_emailSettings.EmailSettings.MailServer, _emailSettings.EmailSettings.MailPort)
         {
-            UseDefaultCredentials = false,
-
             Credentials = new NetworkCredential(
-                _emailSettings.EmailSettings.Sender,
-                _emailSettings.EmailSettings.Password),
-
+        _emailSettings.EmailSettings.Sender,
+        _emailSettings.EmailSettings.Password
+    ),
             EnableSsl = true,
             Timeout = 20000
         };
-
-        await smtp.SendMailAsync(mail);
     }
 }

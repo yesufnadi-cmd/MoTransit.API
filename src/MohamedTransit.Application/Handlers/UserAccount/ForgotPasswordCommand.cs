@@ -14,9 +14,14 @@ using MohamedTransit.Domain.Entities;
 
 namespace MohamedTransit.Application.Commands.UserAccount;
 
-public record ForgotPasswordCommand(string UserName)
-    : IRequest<OperationResult<Unit>>;
+// 1. Command Definition (በስክሪንሹቱ መሰረት 3ቱንም properties እንደ optional በመያዝ)
+public record ForgotPasswordCommand(
+    string? NewPassword = null,
+    string? Password = null,
+    string? UserName = null
+) : IRequest<OperationResult<Unit>>;
 
+// 2. Command Handler
 public class ForgotPasswordCommandHandler
     : IRequestHandler<ForgotPasswordCommand, OperationResult<Unit>>
 {
@@ -45,10 +50,20 @@ public class ForgotPasswordCommandHandler
 
         try
         {
+            // UserName ከተላከው JSON ውስጥ አለመኖሩን ወይም ባዶ መሆኑን ማረጋገጥ
+            if (string.IsNullOrWhiteSpace(request.UserName))
+            {
+                result.AddError(
+                    ErrorCode.NotFound,
+                    "Account Does not Exist");
+
+                return result;
+            }
+
             var userAccount = await _context.Users
                 .Include(x => x.UserRoles)
                 .FirstOrDefaultAsync(
-                    x => x.Username == request.UserName,
+                    x => x.Username.ToLower() == request.UserName.ToLower(),
                     cancellationToken);
 
             if (userAccount is null)
