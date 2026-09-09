@@ -1,23 +1,17 @@
 using System.Text;
 using System.Text.Json.Serialization;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-
 using MohamedTransit.Api.Middleware;
 using MohamedTransit.API;
 using MohamedTransit.API.Services;
-using MohamedTransit.API.Validation;
 using MohamedTransit.Application;
 using MohamedTransit.Application.Options;
 using MohamedTransit.Application.Helper;
 using MohamedTransit.Application.Service;
 using MohamedTransit.Application.Services;
 using MohamedTransit.Domain.Data;
-
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions

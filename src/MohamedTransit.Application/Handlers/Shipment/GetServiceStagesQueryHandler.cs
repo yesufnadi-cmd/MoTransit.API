@@ -7,7 +7,7 @@ using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
 
-using Transit.Application;
+using MohamedTransit.Application;
 
 namespace MohamedTransit.Application.Handlers.ServiceStageHandler;
 
@@ -27,13 +27,13 @@ internal class GetServiceStagesQueryHandler
     {
         var result = new OperationResult<List<ServiceStageExecution>>();
 
-        // 1. Shipment በ ShipmentId (request.ServiceId) መኖሩን ማረጋገጥ
+        // 1. Shipment በ ShipmentId (request.ShipmentId) መኖሩን ማረጋገጥ
         var shipmentExists = await _context.Shipments
-            .AnyAsync(s => s.Id == request.ServiceId, cancellationToken);
+            .AnyAsync(s => s.Id == request.ShipmentId, cancellationToken);
 
         if (!shipmentExists)
         {
-            result.AddError(ErrorCode.NotFound, $"Shipment with ID '{request.ServiceId}' was not found.");
+            result.AddError(ErrorCode.NotFound, $"Shipment with ID '{request.ShipmentId}' was not found.");
             result.Payload = new List<ServiceStageExecution>();
             return result;
         }
@@ -41,7 +41,7 @@ internal class GetServiceStagesQueryHandler
         // 2. የተጠየቀውን ShipmentId የሚጋሩ Active ServiceStageExecutions ማምጣት
         var serviceStages = await _context.ServiceStageExecutions
             .AsNoTracking()
-            .Where(s => s.ShipmentId == request.ServiceId && s.RecordStatus == RecordStatus.Active)
+            .Where(s => s.ShipmentId == request.ShipmentId && s.RecordStatus == RecordStatus.Active)
             .Include(s => s.Documents)
             .ToListAsync(cancellationToken);
 

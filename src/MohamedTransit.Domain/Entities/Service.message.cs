@@ -1,6 +1,5 @@
 ﻿using MohamedTransit.Domain;
 using MohamedTransit.Domain.Common;
-using MohamedTransit.Domain.Entities;
 
 namespace MohamedTransit.Domain.Entities;
 
@@ -13,6 +12,9 @@ public class ServiceMessage : BaseEntity
     public DateTime? ReadAt { get; private set; }
     public bool IsUrgent { get; private set; }
     public string? Priority { get; private set; }
+
+    // የተጨመረው የCreatedDate ፕሮፐርቲ
+    public DateTime CreatedDate { get; private set; } = DateTime.UtcNow;
 
     // Foreign Keys
     public long? ServiceId { get; private set; }
@@ -49,6 +51,7 @@ public class ServiceMessage : BaseEntity
             IsUrgent = isUrgent,
             Priority = priority,
             IsRead = false,
+            CreatedDate = DateTime.UtcNow, // እዚህ ጋርም ማስጀመር ይቻላል
             RecordStatus = RecordStatus.Active
         };
     }

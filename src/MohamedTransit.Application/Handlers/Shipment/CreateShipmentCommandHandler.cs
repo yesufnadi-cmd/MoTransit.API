@@ -11,7 +11,7 @@ using MohamedTransit.Domain.Entities;
 namespace MohamedTransit.Application.Handlers.Shipment;
 
 public class CreateShipmentCommandHandler
-    : IRequestHandler<CreateShipmentCommand, ShipmentDto>
+    : IRequestHandler<CreateServiceCommand, ShipmentDto>
 {
     private readonly ApplicationDbContext _context;
 
@@ -21,7 +21,7 @@ public class CreateShipmentCommandHandler
     }
 
     public async Task<ShipmentDto> Handle(
-        CreateShipmentCommand request,
+        CreateServiceCommand request,
         CancellationToken cancellationToken)
     {
         // 1. Importer በዳታቤዝ ውስጥ መኖሩን ማረጋገጥ (AsNoTracking በመጠቀም Lock እንዳይፈጥር ማድረግ)

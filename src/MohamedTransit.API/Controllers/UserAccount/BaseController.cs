@@ -23,6 +23,10 @@ public class BaseController : ControllerBase
 
     protected IActionResult HandleSuccessResponse<T>(T data, string message = "Operation Success")
     {
+        Response.Headers["Cache-Control"] = "no-store, no-cache, max-age=0, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
+        GetHeaders()["Expires"] = "0";
+
         var apiResponse = new ApiResponse<T>
         {
             Error = false,
@@ -35,6 +39,11 @@ public class BaseController : ControllerBase
         };
 
         return Ok(apiResponse);
+    }
+
+    private IHeaderDictionary GetHeaders()
+    {
+        return Response.Headers;
     }
 
     protected IActionResult HandleErrorResponse<T>(T data, ErrorCode code, string message)

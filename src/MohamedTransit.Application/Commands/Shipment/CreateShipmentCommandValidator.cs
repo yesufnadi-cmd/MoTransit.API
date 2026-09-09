@@ -2,7 +2,7 @@
 
 namespace MohamedTransit.Application.Commands.Shipment;
 
-public class CreateShipmentCommandValidator : AbstractValidator<CreateShipmentCommand>
+public class CreateShipmentCommandValidator : AbstractValidator<CreateServiceCommand>
 {
     public CreateShipmentCommandValidator()
     {

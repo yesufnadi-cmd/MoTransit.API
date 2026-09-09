@@ -10,7 +10,7 @@ using MohamedTransit.API.DTO.Document.Request;
 using MohamedTransit.API.DTO.Shipment.Request;
 using MohamedTransit.API.Helpers;
 using MohamedTransit.Application;
-
+using MohamedTransit.API.DTO.MOT.Request;
 using MohamedTransit.Application.Commands;
 
 
@@ -22,8 +22,6 @@ using MohamedTransit.Application.Queries.Shipment;
 // 3. Domain & Data Namespaces
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
-
-
 namespace MohamedTransit.API.Controllers;
 
 [ApiController]
@@ -47,7 +45,7 @@ public class ShipmentsController : BaseController
     {
         try
         {
-            var command = request.Adapt<CreateShipmentCommand>();
+            var command = request.Adapt<CreateServiceCommand>();
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
@@ -72,17 +70,7 @@ public class ShipmentsController : BaseController
         return Ok(result);
     }
 
-    // ==========================================
-    // 3. Create Stage Transport
-    // ==========================================
-    [HttpPost("CreateStageTransport")]
-    public async Task<IActionResult> CreateStageTransport([FromForm] CreateStageTransportRequest request, CancellationToken ct)
-    {
-        var command = request.Adapt<CreateStageTransportCommand>();
-        var result = await _mediator.Send(command, ct);
-        return Ok(result);
-    }
-
+   
     // ==========================================
     // 4. Update Shipment
     // ==========================================
@@ -135,18 +123,9 @@ public class ShipmentsController : BaseController
         return Ok(result);
     }
 
-    // ==========================================
-    // 7. Update Stage Transport
-    // ==========================================
-    [HttpPut("UpdateStageTransport")]
-    public async Task<IActionResult> UpdateStageTransport([FromForm] UpdateStageTransportRequest request, CancellationToken ct)
-    {
-        var command = request.Adapt<UpdateStageTransportCommand>();
-        var result = await _mediator.Send(command, ct);
-        return Ok(result);
-    }
+   
 
-    // ==========================================
+   // ==========================================
     // 8. Upload Document
     // ==========================================
     [HttpPost("UploadDocument")]
@@ -157,6 +136,44 @@ public class ShipmentsController : BaseController
         return Ok(result);
     }
 
+    /// <summary>
+    /// Get service stages
+    /// </summary>
+    [HttpGet("GetStages")]
+    public async Task<IActionResult> GetStages([FromQuery] long shipmentId)
+    {
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
+
+        var query = new GetServiceStagesQuery { ShipmentId = shipmentId };
+        var result = await _mediator.Send(query);
+
+        return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
+    }
+
+    /// <summary>
+    /// Update stage status
+    /// </summary>
+    [HttpPut("UpdateStageStatus")]
+    public async Task<IActionResult> UpdateStageStatus([FromBody] UpdateStageStatusRequest request)
+    {
+        //var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        //if (currentUserId == null)
+        //    return Unauthorized("User not authenticated");
+
+        var command = new UpdateServiceStageCommand
+        {
+            ShipmentStageId = request.StageId,
+            Status = request.Status,
+            Notes = request.Comments,
+            //  UpdatedByUserId = currentUserId.Value
+        };
+
+        var result = await _mediator.Send(command);
+
+        return result.IsError ? HandleErrorResponse(result.Errors) : HandleSuccessResponse(result.Payload);
+    }
     // ==========================================
     // 9. Get All Shipments
     // ==========================================

@@ -5,10 +5,10 @@ using MohamedTransit.Domain.Entities;
 
 
 
-namespace Transit.Application;
+namespace MohamedTransit.Application;
 
 public class GetServiceStagesQuery : IRequest<OperationResult<List<ServiceStageExecution>>>
 {
-    public long ServiceId { get; set; }
+    public long ShipmentId { get; set; }
 }
 

@@ -22,8 +22,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<ServiceStageExecution> ServiceStageExecutions => Set<ServiceStageExecution>();
 
     public DbSet<ServiceStageExecution> Stages => Set<ServiceStageExecution>();
-
-    public DbSet<StageTransport> Transports { get; set; }
+    // Add these missing ones to fix your controller errors:
+    public DbSet<ServiceStageExecution> ShipmentStages => Set<ServiceStageExecution>();
+    public DbSet<ServiceStageExecution> ShipmentStage => Set<ServiceStageExecution>();
+    public DbSet<StageComment> StageComments => Set<StageComment>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+ public DbSet<StageTransport> Transports { get; set; }
     // ==========================================
     // User Account Module
     // ==========================================

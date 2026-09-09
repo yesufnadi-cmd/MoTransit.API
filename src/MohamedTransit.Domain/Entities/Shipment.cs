@@ -13,6 +13,10 @@ public class Shipment : BaseEntity
 
     public string Description { get; private set; } = string.Empty;
     public TransportMode Mode { get; private set; }
+    public long? CreatedByDataEncoderId { get; private set; }
+    
+   
+    public User? CreatedByDataEncoder { get; private set; }
     public HubLocation AssignedHub { get; private set; }
     public ShipmentStatus Status { get; private set; } = ShipmentStatus.Submitted;
 
@@ -133,6 +137,11 @@ public class Shipment : BaseEntity
     public void AddMessage(ServiceMessage message)
     {
         Messages.Add(message);
+        SetUpdated();
+    }
+    public void UpdateRiskLevel(RiskLevel? riskLevel)
+    {
+        RiskLevel = riskLevel;
         SetUpdated();
     }
 }

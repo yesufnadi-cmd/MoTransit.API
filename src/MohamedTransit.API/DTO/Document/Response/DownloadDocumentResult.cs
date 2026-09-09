@@ -1,4 +1,4 @@
-﻿namespace Transit.API.DTO.document;
+﻿namespace MohamedTransit.API.DTO.Document.Response;
 
 public class DownloadDocumentResult
 {

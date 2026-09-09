@@ -5,10 +5,11 @@ using MohamedTransit.Domain.Common;
 
 namespace MohamedTransit.Application.Commands.Shipment;
 
-public record  CreateShipmentCommand(
+public record CreateServiceCommand(
     long ImporterId,
+    long CreatedByUserId,
     string Description,
     TransportMode Mode,
     string Origin,
     string Destination
-) : IRequest<ShipmentDto>;
+) : IRequest<ShipmentDto>; 
