@@ -36,18 +36,19 @@ public class CreateShipmentCommandHandler
 
         // 2. Unique Tracking Number ማፍለቅ
         long generatedLongId = DateTime.UtcNow.Ticks;
-
         var shipment = MohamedTransit.Domain.Entities.Shipment.Create(
-            $"MT-{generatedLongId}",
-            request.ImporterId,
-            request.Description,
-            request.Mode,
-            request.Mode == TransportMode.MultiModalSeaRail
-                ? HubLocation.Mojo
-                : HubLocation.Adama,
-            request.Origin,
-            request.Destination
-        );
+                    $"MT-{generatedLongId}",
+                    request.Description,
+                    request.ImporterId,
+                    request.Origin,
+                    request.Mode,
+                    request.Mode == TransportMode.MultiModalSeaRail
+                        ? HubLocation.Mojo
+                        : HubLocation.Adama,
+                    request.Destination,
+                    "Ethiopia",             // 8. country (እንደ ቋሚ ጽሁፍ)
+                    request.ImporterId      // 9. createdById (ከ request.ImporterId ሊወሰድ ይችላል ወይም ሌላ ID)
+                );
 
         _context.Shipments.Add(shipment);
 

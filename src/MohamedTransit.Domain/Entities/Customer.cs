@@ -1,13 +1,10 @@
 ﻿using MohamedTransit.Domain;
 using MohamedTransit.Domain.Common;
-
 namespace MohamedTransit.Domain.Entities;
-
 public class Customer : BaseEntity
 {
     private readonly List<CustomerDocument> _documents = new List<CustomerDocument>();
-
-    public string BusinessName { get; private set; } = string.Empty;
+public string BusinessName { get; private set; } = string.Empty;
     public string TINNumber { get; private set; } = string.Empty;
     public string BusinessLicense { get; private set; } = string.Empty;
     public string BusinessAddress { get; private set; } = string.Empty;
@@ -16,7 +13,7 @@ public class Customer : BaseEntity
     public string State { get; private set; } = string.Empty;
     public string PostalCode { get; private set; } = string.Empty;
 
-    public string ContactPerson { get; private set; } = string.Empty;
+   public string ContactPerson { get; private set; } = string.Empty;
     public string ContactPhone { get; private set; } = string.Empty;
     public string ContactEmail { get; private set; } = string.Empty;
     public string BusinessType { get; private set; } = string.Empty;

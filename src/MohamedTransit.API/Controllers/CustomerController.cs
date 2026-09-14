@@ -1,21 +1,23 @@
 ﻿using Mapster;
+
+using MediatR;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using MohamedTransit.API.DTO.MasterData.Request;
 using MohamedTransit.API.DTO.MOT.Request;
 using MohamedTransit.API.DTO.MOT.Response;
 using MohamedTransit.API.Helpers;
+using MohamedTransit.Application.Commands;
 using MohamedTransit.Application.Commands.Shipment;
 using MohamedTransit.Application.Queries.Customer;
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
 
-using MohamedTransit.Application.Commands;
-using MediatR;
-
 using MohameTransit.API.DTO.MOT.Request;
 namespace MohamedTransit.API.Controllers.MOT;
-
 [ApiController]
 [Route("api/v1/[controller]")]
 public class CustomerController : BaseController
@@ -60,7 +62,45 @@ public class CustomerController : BaseController
         // ErrorOr ስለሌለ በቀጥታ ውጤቱን እንመልሳለን
         return HandleSuccessResponse(result);
     }
+    [HttpPost("Register")]
+    public async Task<IActionResult> RegisterAsCustomer([FromBody] CreateCustomerRequest request)
+    {
+        // 1. አሁን ሎጊን ያደረገውን ዩዘር ID ከ Token እናገኛለን
+        var currentUserId = JwtHelper.GetCurrentUserId(_httpContextAccessor, _context);
+        if (currentUserId == null)
+            return Unauthorized("User not authenticated");
 
+        // 2. ይህ ዩዘር ቀደም ብሎ እንደ Customer ተመዝግቦ እንደሆነ እናረጋግጣለን
+        var existingCustomer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.UserId == currentUserId.Value);
+
+        if (existingCustomer != null)
+            return BadRequest("You are already registered as a customer.");
+
+        // 3. በ Customer ክላስ ውስጥ ባለው Customer.Create մեቶድ አማካኝነት አዲስ Customer እንፈጥራለን
+        var customer = Customer.Create(
+            businessName: request.BusinessName,
+            tinNumber: request.TINNumber,
+            businessLicense: request.BusinessLicense,
+            businessAddress: request.BusinessAddress,
+            city: request.City,
+            state: request.State,
+            postalCode: request.PostalCode,
+            contactPerson: request.ContactPerson,
+            contactPhone: request.ContactPhone,
+            contactEmail: request.ContactEmail,
+            businessType: request.BusinessType,
+            importLicense: request.ImportLicense,
+            importLicenseExpiry: request.ImportLicenseExpiry,
+            userId: currentUserId.Value,
+            createdByDataEncoderId: currentUserId.Value // ራሱ ዩዘሩ ስለመዘገበው (ወይም የተለየ DataEncoder ID ካለ መስጠት ይቻላል)
+        );
+
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+
+        return HandleSuccessResponse(customer, "Customer registered successfully. Waiting for admin approval.");
+    }
     /// <summary>
     /// Get all services for the current customer
     /// </summary>

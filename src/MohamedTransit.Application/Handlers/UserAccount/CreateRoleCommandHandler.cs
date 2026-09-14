@@ -30,27 +30,43 @@ internal class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, Ope
     {
         var result = new OperationResult<Role>();
 
-        var existingRole = await _context.Roles.FirstOrDefaultAsync(x => x.Name == request.Name);
+        // 1. ሮሉ በስም መኖሩን ማረጋገጥ
+        var existingRole = await _context.Roles.FirstOrDefaultAsync(x => x.Name == request.Name, cancellationToken);
         if (existingRole is not null)
         {
             result.AddError(ErrorCode.RecordFound, "Role already exist.");
             return result;
         }
 
+        // 2. ሮሉን መፍጠር (Role.Create ይጠቀማል)
         var role = Role.Create(request.Name, request.Description);
-        await _context.Roles.AddAsync(role);
-        await _context.SaveChangesAsync();
+        await _context.Roles.AddAsync(role, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
-        if (request.Privileges.Count > 0)
+        // 3. ፕሪቪሌጆቹን ማያያዝ
+        if (request.Privileges is { Count: > 0 })
         {
-            foreach (var permission in request.Privileges)
+            foreach (var permissionId in request.Privileges)
             {
-                await _context.AddAsync(new RolePrivilege() { PrivilegeId = permission, RoleId = role.Id });
+                var rolePrivilege = new RolePrivilege
+                {
+                    PrivilegeId = permissionId,
+                    RoleId = role.Id
+                };
+
+                // ኤንቲቲው ላይ ያለውን የተዘጋጀ ሜቶድ መጠቀም ይቻላል ወይም በቀጥታ መጨመር
+                role.AddRolePrivilege(rolePrivilege);
+                await _context.AddAsync(rolePrivilege, cancellationToken);
             }
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        await _context.SaveChangesAsync();
-        result.Payload = role;
+        // 4. የተፈጠረውን ሮል ከነ ፕሪቪሌጆቹ (Include) ጋር ከዳታቤዝ ዳግም መጥራት
+        var createdRole = await _context.Roles
+            .Include(r => r.RolePrivileges)
+            .FirstOrDefaultAsync(r => r.Id == role.Id, cancellationToken);
+
+        result.Payload = createdRole ?? role;
         result.Message = "Operation success";
 
         return result;

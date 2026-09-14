@@ -1,15 +1,29 @@
 ﻿namespace MohamedTransit.Domain.Common;
-
-
-
 public enum HubLocation
 {
     Djibouti = 1,
     Mojo = 2,
     Adama = 3
 }
-
-
+public enum OrderStatus
+{
+    Pending = 1, AcceptedByAgent = 2, AvailableToCRO = 3, AcceptedByCRO = 4
+}
+public enum Usage
+{
+    House = 1,
+    Commercial = 2
+}
+public enum PropertyType
+{
+    Rent = 1, Sell, Lease
+}
+public enum PropertyStatus
+{
+    Available = 1,
+    RentedOrSold = 2,
+    LeasedOutside = 3
+}
 //public enum ShipmentStatus
 //{
 //    Registered = 1,
@@ -131,6 +145,22 @@ public enum RoleName
     Assessor = 9,
     DataEncoder = 10,
     Importer = 11
+}
+
+public enum PaymentStatus
+{
+    Pending = 1,
+    Paid = 2,
+    Failed = 3,
+    Cancelled = 4,
+    UnPaid = 5
+}
+public enum PaymentOption
+{
+    BankTransfer = 1,
+    CBE = 2,
+    TeleBirr = 3,
+    Cash = 4
 }
 public enum ShipmentStage
 {

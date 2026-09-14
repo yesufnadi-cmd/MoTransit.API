@@ -1,7 +1,9 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 
 using MohamedTransit.Domain.Data;
+
 namespace MohamedTransit.API.Helpers;
+
 public static class JwtHelper
 {
     public static long? GetCurrentUserId(IHttpContextAccessor httpContextAccessor, ApplicationDbContext context)
@@ -10,11 +12,17 @@ public static class JwtHelper
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             return null;
 
-        var token = authorizationHeader.Replace("Bearer ", "");
+        // ቶከኑን ከባዶ ቦታዎች (Whitespace) እና ከትርፍ ፊደላት እናጸዳዋለን
+        var token = authorizationHeader.Replace("Bearer ", "").Trim();
 
         try
         {
             var handler = new JwtSecurityTokenHandler();
+
+            // ቶከኑ ትክክለኛ ቅርጸት ያለው መሆኑን አስቀድመን እንፈትሻለን (SecurityTokenMalformedException ይከላከላል)
+            if (!handler.CanReadToken(token))
+                return null;
+
             var jsonToken = handler.ReadJwtToken(token);
 
             // Look for the "id" claim in the JWT token
@@ -45,11 +53,15 @@ public static class JwtHelper
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer "))
             return null;
 
-        var token = authorizationHeader.Replace("Bearer ", "");
+        var token = authorizationHeader.Replace("Bearer ", "").Trim();
 
         try
         {
             var handler = new JwtSecurityTokenHandler();
+
+            if (!handler.CanReadToken(token))
+                return null;
+
             var jsonToken = handler.ReadJwtToken(token);
 
             return jsonToken.Claims.FirstOrDefault(x => x.Type == "userName")?.Value;
@@ -60,11 +72,3 @@ public static class JwtHelper
         }
     }
 }
-
-
-
-
-
-
-
-

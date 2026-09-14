@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MohamedTransit.Domain.Data;
 
@@ -10,9 +11,11 @@ using MohamedTransit.Domain.Data;
 namespace MohamedTransit.Domain.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912195904_UpdateModels")]
+    partial class UpdateModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -549,7 +552,6 @@ namespace MohamedTransit.Domain.Migrations
             modelBuilder.Entity("MohamedTransit.Domain.Entities.Shipment", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<long?>("AssignedAssessorId")
@@ -1061,6 +1063,12 @@ namespace MohamedTransit.Domain.Migrations
                     b.HasOne("MohamedTransit.Domain.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId");
+
+                    b.HasOne("MohamedTransit.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("MohamedTransit.Domain.Entities.User", "Importer")
                         .WithMany()

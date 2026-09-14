@@ -1,17 +1,21 @@
 using System.Text;
 using System.Text.Json.Serialization;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
 using MohamedTransit.Api.Middleware;
 using MohamedTransit.API;
 using MohamedTransit.API.Services;
 using MohamedTransit.Application;
-using MohamedTransit.Application.Options;
+using MohamedTransit.Application.DataSeeder;
 using MohamedTransit.Application.Helper;
+using MohamedTransit.Application.Options;
 using MohamedTransit.Application.Service;
 using MohamedTransit.Application.Services;
 using MohamedTransit.Domain.Data;
+
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -38,9 +42,12 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 builder.Services.AddHttpContextAccessor();
+// EndToEndTest ን በ DI Container ውስጥ ማስመዝገብ
+builder.Services.AddScoped<MohamedTransit.API.TestScripts.EndToEndTest>();
 
 // 2. Application & MediatR Architecture Setup
 builder.Services.AddApplication();
+builder.Services.AddScoped<IDataSeederService, DataSeederService>();
 
 // 3. Application Services Registration
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
@@ -152,8 +159,13 @@ if (app.Environment.IsDevelopment())
     {
         options.WithTitle("Mohamed Transit API")
                .WithTheme(ScalarTheme.Purple);
-    });
-}
+    }); }
+    if (!app.Environment.IsDevelopment())
+    {
+        return;
+    } 
+    app.UseDeveloperExceptionPage(); // ይህ ስህተቱን በዝርዝር ያሳየዎታል
+
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

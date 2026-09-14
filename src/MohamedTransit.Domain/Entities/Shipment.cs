@@ -34,7 +34,8 @@ public class Shipment : BaseEntity
     // Additional Navigation & Assignment Properties
     public long? AssignedCaseExecutorId { get; private set; }
     public User? AssignedCaseExecutor { get; private set; }
-
+    // ይህንን property በ Shipment.cs ውስጥ ያክሉት
+    public ServiceType? ServiceType { get; private set; }
     public long? AssignedAssessorId { get; private set; }
     public User? AssignedAssessor { get; private set; }
 
@@ -57,6 +58,7 @@ public class Shipment : BaseEntity
     // Static Factory Method
     public static Shipment Create(
         string trackingNumber,
+        string v,
         long importerId,
         string description,
         TransportMode mode,

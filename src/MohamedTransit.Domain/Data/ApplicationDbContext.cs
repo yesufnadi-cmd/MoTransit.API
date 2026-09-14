@@ -102,20 +102,5 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(x => x.PrivilegeId)
             .OnDelete(DeleteBehavior.Restrict);
-
-
-        // ==========================================
-        // Shipment → User
-        // ==========================================
-
-        modelBuilder.Entity<Shipment>(entity =>
-        {
-            entity.HasOne<User>()
-                .WithMany()
-                .HasForeignKey(s => s.Id)
-                .OnDelete(DeleteBehavior.NoAction);
-
-           
-        });
-    }
+}
 }

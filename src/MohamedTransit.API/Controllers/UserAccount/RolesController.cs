@@ -27,7 +27,15 @@ public class RolesController : BaseController
     [HttpPost("Create")]
     public async Task<IActionResult> Create([FromBody] RoleDto clientRequest)
     {
-        var command = clientRequest.Adapt<CreateRoleCommand>();
+
+        var privilegeIds = clientRequest.Privileges?.Select(p => p.Id).ToList() ?? new List<long>();
+
+        // CreateRoleCommand expects (roleName, description, List<long> privilegeIds)
+        var command = new CreateRoleCommand(
+            clientRequest.RoleName,
+            string.Empty,
+            privilegeIds
+        );
         var result = await _mediator.Send(command);
 
         if (result == null) return BadRequest("An unexpected error occurred.");
