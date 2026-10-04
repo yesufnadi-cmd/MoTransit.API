@@ -33,23 +33,22 @@ public class CreateShipmentCommandHandler
         {
             throw new KeyNotFoundException($"Importer with ID {request.ImporterId} does not exist.");
         }
-
         // 2. Unique Tracking Number ማፍለቅ
-        long generatedLongId = DateTime.UtcNow.Ticks;
-        var shipment = MohamedTransit.Domain.Entities.Shipment.Create(
-                    $"MT-{generatedLongId}",
-                    request.Description,
-                    request.ImporterId,
-                    request.Origin,
-                    request.Mode,
-                    request.Mode == TransportMode.MultiModalSeaRail
-                        ? HubLocation.Mojo
-                        : HubLocation.Adama,
-                    request.Destination,
-                    "Ethiopia",             // 8. country (እንደ ቋሚ ጽሁፍ)
-                    request.ImporterId      // 9. createdById (ከ request.ImporterId ሊወሰድ ይችላል ወይም ሌላ ID)
-                );
+        long generatedLongId = DateTime.UtcNow.Ticks; 
 
+        var shipment = MohamedTransit.Domain.Entities.Shipment.Create(
+            $"MT-{generatedLongId}",                     // 1. trackingNumber
+            request.Description,                         // 2. v 
+            request.ImporterId,                          // 3. importerId
+            request.Description,                         // 4. description
+            request.Mode,                                // 5. mode
+            request.Mode == TransportMode.MultiModalSeaRail
+                ? HubLocation.Mojo
+                : HubLocation.Adama,                     // 6. assignedHub
+            request.Origin,                              // 7. origin
+            request.Destination,                         // 8. destination
+            request.ImporterId                           // 9. createdByUserI//d
+        );
         _context.Shipments.Add(shipment);
 
         await _context.SaveChangesAsync(cancellationToken);

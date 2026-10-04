@@ -1,13 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-
 using MohamedTransit.Application.Service;
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
-
-
 namespace MohamedTransit.Application.DataSeeder;
-
 public interface IDataSeederService
 {
     Task SeedAsync();

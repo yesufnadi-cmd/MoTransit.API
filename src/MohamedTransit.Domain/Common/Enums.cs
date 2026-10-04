@@ -16,7 +16,7 @@ public enum Usage
 }
 public enum PropertyType
 {
-    Rent = 1, Sell, Lease
+    Rent = 1, Sell = 2, Lease = 3
 }
 public enum PropertyStatus
 {

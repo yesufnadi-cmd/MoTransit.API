@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 using MohamedTransit.Domain.Data;
 
@@ -19,19 +20,27 @@ public static class JwtHelper
         {
             var handler = new JwtSecurityTokenHandler();
 
-            // ቶከኑ ትክክለኛ ቅርጸት ያለው መሆኑን አስቀድመን እንፈትሻለን (SecurityTokenMalformedException ይከላከላል)
+            // ቶከኑ ትክክለኛ ቅርጸት ያለው መሆኑን አስቀድመን እንፈትሻለን
             if (!handler.CanReadToken(token))
                 return null;
 
             var jsonToken = handler.ReadJwtToken(token);
 
-            // Look for the "id" claim in the JWT token
-            var idClaim = jsonToken.Claims.FirstOrDefault(x => x.Type == "id");
+            // 1. "id" ወይም መደበኛ የ NameIdentifier / sub ክሌሞችን እንፈትሻለን
+            var idClaim = jsonToken.Claims.FirstOrDefault(x =>
+                x.Type == "id" ||
+                x.Type == ClaimTypes.NameIdentifier ||
+                x.Type == JwtRegisteredClaimNames.Sub);
+
             if (idClaim != null && long.TryParse(idClaim.Value, out var userId))
                 return userId;
 
-            // If no "id" claim, try to get user ID from username
-            var userNameClaim = jsonToken.Claims.FirstOrDefault(x => x.Type == "userName");
+            // 2. "userName" ወይም መደበኛ የ Name / UniqueName ክሌሞችን እንፈትሻለን
+            var userNameClaim = jsonToken.Claims.FirstOrDefault(x =>
+                x.Type == "userName" ||
+                x.Type == ClaimTypes.Name ||
+                x.Type == JwtRegisteredClaimNames.UniqueName);
+
             if (userNameClaim != null)
             {
                 var user = context.Users.FirstOrDefault(u => u.Username == userNameClaim.Value);
@@ -64,7 +73,10 @@ public static class JwtHelper
 
             var jsonToken = handler.ReadJwtToken(token);
 
-            return jsonToken.Claims.FirstOrDefault(x => x.Type == "userName")?.Value;
+            return jsonToken.Claims.FirstOrDefault(x =>
+                x.Type == "userName" ||
+                x.Type == ClaimTypes.Name ||
+                x.Type == JwtRegisteredClaimNames.UniqueName)?.Value;
         }
         catch
         {

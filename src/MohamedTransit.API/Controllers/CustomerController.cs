@@ -1,10 +1,8 @@
 ﻿using Mapster;
 
 using MediatR;
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 using MohamedTransit.API.DTO.MasterData.Request;
 using MohamedTransit.API.DTO.MOT.Request;
 using MohamedTransit.API.DTO.MOT.Response;
@@ -115,6 +113,8 @@ public class CustomerController : BaseController
 
     /// <summary>
     /// Upload document for a service stage
+    /// <summary>
+    /// Upload document for a service stage
     /// </summary>
     [HttpPost("UploadStageDocument")]
     public async Task<IActionResult> UploadStageDocument(
@@ -127,18 +127,18 @@ public class CustomerController : BaseController
         if (currentUserId == null)
             return Unauthorized("User not authenticated");
 
-        // Verify shipment belongs to customer
+       
         var service = await _context.Shipments
-            .FirstOrDefaultAsync(s => s.Id == serviceId && s.ImporterId == currentUserId.Value);
+     .FirstOrDefaultAsync(s => s.Id == serviceId); 
 
         if (service == null)
-            return NotFound("Shipment not found");
+            return NotFound("Service not found"); 
 
-        var stage = await _context.ShipmentStages   
+        var stage = await _context.ShipmentStages
             .FirstOrDefaultAsync(s => s.Id == stageId && s.ShipmentId == serviceId);
 
         if (stage == null)
-            return NotFound("Shipment stage not found");
+            return NotFound("Service stage not found");
 
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded");
@@ -173,7 +173,6 @@ public class CustomerController : BaseController
 
         return HandleSuccessResponse(document);
     }
-
     /// <summary>
     /// Get customer notifications
     /// </summary>
