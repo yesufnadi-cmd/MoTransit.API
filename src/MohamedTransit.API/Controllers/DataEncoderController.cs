@@ -120,19 +120,34 @@ public class DataEncoderController : BaseController
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // እዚህ ጋር Command (MediatR) በመጠቀም መረጃውን ወደ Application/Infrastructure Layer በመላክ ዳታቤዝ ውስጥ ማስቀመጥ ይቻላል
         var command = new Application.Commands.DataEncoder.CreateServiceCommand
         {
             Reference = request.Reference,
-            ContactPerson = request.ContactPerson, 
+            ContactPerson = request.ContactPerson,
             Email = request.Email,
             Phone = request.Phone,
             Notes = request.Notes
         };
-        var result = await _mediator.Send(command, cancellationToken);
 
-        // እንደ ፕሮጀክትዎ አወቃቀር Result Pattern (ErrorOr) ወይም የተለመደውን Ok/BadRequest መጠቀም ይቻላል
-        return Ok(new { Success = true, Message = "Service created successfully as draft." });
+        // ሃንደለሩ የተፈጠረውን ሰርቪስ Id (long) ይመልሳል
+        var serviceId = await _mediator.Send(command, cancellationToken);
+
+        // የተመዘገበውን ሙሉ መረጃ (Data) ከነ Id-ው መመለስ
+        return Ok(new
+        {
+            success = true,
+            message = "Service created successfully as draft.",
+            data = new
+            {
+                id = serviceId,
+                reference = request.Reference,
+                contactPerson = request.ContactPerson,
+                email = request.Email,
+                phone = request.Phone,
+                notes = request.Notes
+            }
+        });
+
     }
     [HttpPut("services/{id}/service-type")]
     public async Task<IActionResult> UpdateServiceType(long id, [FromBody] UpdateServiceTypeRequest request)
@@ -206,7 +221,46 @@ await _context.SaveChangesAsync(cancellationToken);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// </summary>
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// </summary>
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// </summary>
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// </summary>
+    /// <summary>
+    /// Get all documents across all services for the Document Centre
+    /// </summary>
+    [HttpGet("documents")]
+    public async Task<IActionResult> GetAllDocuments(CancellationToken cancellationToken)
+    {
+        var documents = await _context.ServiceDocuments
+            .Include(d => d.Shipment)
+            .OrderByDescending(d => d.CreateAt)
+            .ToListAsync(cancellationToken);
 
+        var documentDtos = documents.Select(d => new
+        {
+            id = d.Id,
+            documentName = d.FileName,
+            documentType = d.DocumentType.ToString(),
+            // Reference ፋንታ የ Shipmentን Id መጠቀም (ወይም በሞዴልዎ ያለውን ትክክለኛ ስም ማስገባት)
+            serviceReference = d.Shipment != null ? d.Shipment.Id.ToString() : "SVC-0000",
+            stage = "N/A", // ሞዴሉ ላይ StageName ከሌለ በጊዜያዊነት
+            uploadedBy = "System", // ሞዴሉ ላይ UploadedByName ከሌለ
+            uploadedDate = d.CreateAt.ToString("dd MMM yyyy, HH:mm"),
+            status = "Active" // Status ከሌለ
+        });
+
+        return Ok(new { Success = true, Data = documentDtos });
+    }
     /// <summary>
     /// Get data encoder dashboard
     /// </summary>
@@ -306,6 +360,9 @@ await _context.SaveChangesAsync(cancellationToken);
         return user?.UserRoles.Any(ur => ur.Role.Name == "DataEncoder") ?? false;
     }
 }
+
+
+
 
 
 

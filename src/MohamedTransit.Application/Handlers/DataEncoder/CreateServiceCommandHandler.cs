@@ -1,12 +1,12 @@
 ﻿using MediatR;
 
-using MohamedTransit.Application.Commands.DataEncoder; // (የኮማንድዎ ትክክለኛ namespace)
+using MohamedTransit.Application.Commands.DataEncoder;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
-
-namespace MohamedTransit.Application.CommandHandlers
+namespace MohamedTransit.Application.Handlers.DataEncoder
 {
-    public class CreateServiceCommandHandler : IRequestHandler<CreateServiceCommand, bool>
+    
+    public class CreateServiceCommandHandler : IRequestHandler<CreateServiceCommand, long>
     {
         private readonly ApplicationDbContext _context;
 
@@ -15,26 +15,23 @@ namespace MohamedTransit.Application.CommandHandlers
             _context = context;
         }
 
-        public async Task<bool> Handle(CreateServiceCommand request, CancellationToken cancellationToken)
+        public async Task<long> Handle(CreateServiceCommand request, CancellationToken cancellationToken)
         {
-            // 1. መረጃውን ወደ  entidade (Entity) መቀየር እና ዳታቤዝ ውስጥ ማስቀመጥ
-            // (ማስታወሻ፡ እንደ ፕሮጀክትዎ ሎጂክ የ Service/Shipment ሞዴልን እዚህ ጋር ማስገባት ይችላሉ)
-
-            // ለምሳሌ ያህል (Service entity ካለዎት):
-            /*
-            var service = Service.Create(
-                request.Reference,
-                request.ContactPerson,
-                request.Email,
-                request.Phone,
-                request.Notes
-            );
+            var service = new Domain.Entities.Service
+            {
+                Reference = request.Reference,
+                ContactPerson = request.ContactPerson,
+                Email = request.Email,
+                Phone = request.Phone,
+                Notes = request.Notes,
+                ImporterId = request.ImporterId
+            };
 
             _context.Services.Add(service);
             await _context.SaveChangesAsync(cancellationToken);
-            */
 
-            return true;
+            // 2. ዳታቤዙ ካስቀመጠው በኋላ አውቶማቲክ የተፈጠረውን long Id ይመልሳል
+            return service.Id;
         }
     }
 }
