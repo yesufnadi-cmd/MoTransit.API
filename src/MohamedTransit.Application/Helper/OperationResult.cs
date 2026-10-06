@@ -1,4 +1,6 @@
-﻿namespace MohamedTransit.Application.Helper;
+﻿using MohamedTransit.Domain.Entities;
+
+namespace MohamedTransit.Application.Helper;
 
 public class OperationResult<T>
 {
@@ -67,6 +69,22 @@ public class OperationResult<T>
         else
         {
             result.AddUnknownError(message);
+        }
+
+        return result;
+    }
+
+    public static OperationResult<T> Failure(List<Error> errors)
+    {
+        var result = new OperationResult<T>
+        {
+            IsError = true,
+            Message = errors.FirstOrDefault()?.Message ?? "Operation failed."
+        };
+
+        foreach (var error in errors)
+        {
+            result.Errors.Add(error);
         }
 
         return result;
