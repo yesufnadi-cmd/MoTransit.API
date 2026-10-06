@@ -6,7 +6,7 @@ using MohamedTransit.API.DTO.MOT.Response;
 using MohamedTransit.API.DTO.Document.Request;
 using MohamedTransit.API.Helpers;
 using MohamedTransit.Application.Commands;
-using MohamedTransit.Application.Queries;
+using MohamedTransit.Application.Queries.Customer.CaseExecuter;
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.API.DTO.Document.Response;

@@ -14,8 +14,14 @@ public class Shipment : BaseEntity
     public string Description { get; private set; } = string.Empty;
     public TransportMode Mode { get; private set; }
     public long? CreatedByDataEncoderId { get; private set; }
-    
-   
+    public void UpdateServiceType(ServiceType serviceType)
+    {
+        ServiceType = serviceType;
+    }
+    public void Submit()
+    {
+        Status = ShipmentStatus.Submitted;
+    }
     public User? CreatedByDataEncoder { get; private set; }
     public HubLocation AssignedHub { get; private set; }
     public ShipmentStatus Status { get; private set; } = ShipmentStatus.Submitted;

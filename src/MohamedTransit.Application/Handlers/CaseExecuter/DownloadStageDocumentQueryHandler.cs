@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+
 using MediatR;
+
 using MohamedTransit.Application.Helper;
-using MohamedTransit.Application.Queries;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
+using MohamedTransit.Application.Queries.Customer.CaseExecuter;
 namespace MohamedTransit.Application.Handlers;
 internal class DownloadStageDocumentQueryHandler
     : IRequestHandler<DownloadStageDocumentQuery, OperationResult<StageDocument>>

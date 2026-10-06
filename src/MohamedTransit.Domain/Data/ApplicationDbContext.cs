@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext
     // Add these missing ones to fix your controller errors:
     public DbSet<ServiceStageExecution> ShipmentStages => Set<ServiceStageExecution>();
     public DbSet<ServiceStageExecution> ShipmentStage => Set<ServiceStageExecution>();
+    public DbSet<Service> Services { get; set; } = null!;
     public DbSet<StageComment> StageComments => Set<StageComment>();
     public DbSet<Notification> Notifications => Set<Notification>();
  public DbSet<StageTransport> Transports { get; set; }

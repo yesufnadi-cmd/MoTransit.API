@@ -1,9 +1,12 @@
 ﻿using MediatR;
+
 using Microsoft.EntityFrameworkCore;
+
 using MohamedTransit.Application.Helper;
-using MohamedTransit.Application.Queries;
+using MohamedTransit.Application.Queries.Customer.CaseExecuter;
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
+
 using ShipmentEntity = MohamedTransit.Domain.Entities.Shipment;
 namespace MohamedTransit.Application.Handlers;
 internal class GetCaseExecutorAssignedServicesByIdHandler

@@ -11,7 +11,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 using MohamedTransit.Application.Helper;
-using MohamedTransit.Application.Queries;
+using MohamedTransit.Application.Queries.Customer.CaseExecuter;
 using MohamedTransit.Domain.Data;
 
 namespace MohamedTransit.Application.Handlers;

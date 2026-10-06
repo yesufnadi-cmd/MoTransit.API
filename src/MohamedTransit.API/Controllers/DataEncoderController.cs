@@ -1,11 +1,18 @@
 ﻿using Mapster;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using MohamedTransit.API.DTO.MOT.Request;
+using MohamedTransit.Application.Commands.DataEncoder;
+using MohamedTransit.API.DTO.MOT.Response;
 using MohamedTransit.API.Helpers;
+using MohamedTransit.Application.Commands.Shipment;
+using MohamedTransit.Application.DTO;
+using MohamedTransit.Application.Queries;
 using MohamedTransit.Domain.Common;
 using MohamedTransit.Domain.Data;
 using MohamedTransit.Domain.Entities;
-using MohamedTransit.API.DTO.MOT.Response;
 
 
 namespace MohamedTransit.API.Controllers.MOT;
@@ -106,7 +113,100 @@ public class DataEncoderController : BaseController
 
         return HandleSuccessResponse(customer);
     }
-   
+    // POST: api/v1/DataEncoder/services
+    [HttpPost("Create services")]
+    public async Task<IActionResult> CreateService([FromBody] CreateServiceRequestDto request, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        // እዚህ ጋር Command (MediatR) በመጠቀም መረጃውን ወደ Application/Infrastructure Layer በመላክ ዳታቤዝ ውስጥ ማስቀመጥ ይቻላል
+        var command = new Application.Commands.DataEncoder.CreateServiceCommand
+        {
+            Reference = request.Reference,
+            ContactPerson = request.ContactPerson, 
+            Email = request.Email,
+            Phone = request.Phone,
+            Notes = request.Notes
+        };
+        var result = await _mediator.Send(command, cancellationToken);
+
+        // እንደ ፕሮጀክትዎ አወቃቀር Result Pattern (ErrorOr) ወይም የተለመደውን Ok/BadRequest መጠቀም ይቻላል
+        return Ok(new { Success = true, Message = "Service created successfully as draft." });
+    }
+    [HttpPut("services/{id}/service-type")]
+    public async Task<IActionResult> UpdateServiceType(long id, [FromBody] UpdateServiceTypeRequest request)
+    {
+        var service = await _context.Shipments.FirstOrDefaultAsync(s => s.Id == id);
+        if (service == null) return NotFound("Service not found");
+
+        service.UpdateServiceType(request.ServiceType); // (ወይም የሚመለከተው ፕሮፐርቲ)
+        await _context.SaveChangesAsync();
+
+        return HandleSuccessResponse(new { Success = true, Message = "Service type updated successfully." });
+    }
+    [HttpPost("services/{id}/documents")]
+    public async Task<IActionResult> UploadServiceDocuments(long id, [FromForm] List<IFormFile> files, CancellationToken cancellationToken)
+    {
+        var service = await _context.Shipments
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+        if (service == null)
+            return NotFound("Service not found");
+
+        if (files == null || files.Count == 0)
+            return BadRequest("No files uploaded.");
+
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "documents");
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        foreach (var file in files)
+        {
+            if (file.Length > 0)
+            {
+                long timestampTicks = DateTime.UtcNow.Ticks;
+                var uniqueFileName = $"{id}_{timestampTicks}_{Path.GetFileName(file.FileName)}";
+
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream, cancellationToken);
+                }
+
+                var relativePath = $"/uploads/documents/{uniqueFileName}";
+                
+            }
+        }
+await _context.SaveChangesAsync(cancellationToken);
+
+        return HandleSuccessResponse(new { Success = true, Message = "Documents uploaded successfully." });
+    }
+    [HttpPost("services/{id}/submit")]
+    public async Task<IActionResult> SubmitService(long id)
+    {
+        var service = await _context.Shipments.FirstOrDefaultAsync(s => s.Id == id);
+        if (service == null) return NotFound("Service not found");
+
+        service.Submit();
+
+        await _context.SaveChangesAsync();
+
+        return HandleSuccessResponse(new { Success = true, Message = "Service submitted successfully and locked for approval." });
+    }
+
+    // GET: api/v1/DataEncoder/services
+    [HttpGet("services")]
+    public async Task<ActionResult<IEnumerable<ServiceDto>>> GetAllServices(CancellationToken cancellationToken)
+    {
+        var query = new GetAllServicesQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Get data encoder dashboard
     /// </summary>
