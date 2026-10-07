@@ -1,10 +1,8 @@
 using System.Text;
 using System.Text.Json.Serialization;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
 using MohamedTransit.Api.Middleware;
 using MohamedTransit.API;
 using MohamedTransit.API.Services;
@@ -44,7 +42,8 @@ builder.Services.AddControllers()
 builder.Services.AddHttpContextAccessor();
 // EndToEndTest ን በ DI Container ውስጥ ማስመዝገብ
 builder.Services.AddScoped<MohamedTransit.API.TestScripts.EndToEndTest>();
-
+builder.Services.AddScoped<IMessagingService, MessagingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 // 2. Application & MediatR Architecture Setup
 builder.Services.AddApplication();
 builder.Services.AddScoped<IDataSeederService, DataSeederService>();
@@ -165,16 +164,10 @@ if (app.Environment.IsDevelopment())
         return;
     } 
     app.UseDeveloperExceptionPage(); // ይህ ስህተቱን በዝርዝር ያሳየዎታል
-
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseCors("AllowClientApplications");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 await app.RunAsync();

@@ -38,24 +38,24 @@ public class SeederController : BaseController
     ///// <summary>
     ///// Get seeded user credentials for testing
     ///// </summary>
-    //[HttpGet("credentials")]
-    //[AllowAnonymous]
-    //public IActionResult GetSeededCredentials()
-    //{
-    //    var credentials = new
-    //    {
-    //        users = new[]
-    //        {
-    //            new { role = "SuperAdmin", username = "superadmin", password = "Admin123!", email = "superadmin@transit.com" },
-    //            new { role = "Manager", username = "manager", password = "Manager123!", email = "manager@transit.com" },
-    //            new { role = "Assessor", username = "assessor", password = "Assessor123!", email = "assessor@transit.com" },
-    //            new { role = "Case Executor", username = "caseexecutor", password = "Executor123!", email = "caseexecutor@transit.com" },
-    //            new { role = "Data Encoder", username = "dataencoder", password = "Encoder123!", email = "dataencoder@transit.com" },
-    //            new { role = "Customer", username = "customer", password = "Customer123!", email = "customer@transit.com" }
-    //        }
-    //    };
+    [HttpGet("credentials")]
+    [AllowAnonymous]
+    public IActionResult GetSeededCredentials()
+    {
+        var credentials = new
+       {
+           users = new[]
+           {
+              new { role = "SuperAdmin", username = "superadmin", password = "Admin123!", email = "superadmin@transit.com" },
+              new { role = "Manager", username = "manager", password = "Manager123!", email = "manager@transit.com" },
+              new { role = "Assessor", username = "assessor", password = "Assessor123!", email = "assessor@transit.com" },
+               new { role = "Case Executor", username = "caseexecutor", password = "Executor123!", email = "caseexecutor@transit.com" },
+                new { role = "Data Encoder", username = "dataencoder", password = "Encoder123!", email = "dataencoder@transit.com" },
+                new { role = "Customer", username = "customer", password = "Customer123!", email = "customer@transit.com" }
+            }
+        };
 
-    //    return HandleSuccessResponse(credentials);
-    //}
+        return HandleSuccessResponse(credentials);
+    }
 }
 
