@@ -80,7 +80,10 @@ public class User
     {
         _roles.Add(role);
     }
-
+    public void UpdateProfilePhoto(string profilePhotoPath)
+    {
+        ProfilePhoto = profilePhotoPath;
+    }
     public void UpdateUser(
         string firstName,
         string lastName,
